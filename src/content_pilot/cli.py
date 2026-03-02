@@ -149,6 +149,14 @@ def generate(topic: str, platform: str, style: str) -> None:
             except RuntimeError as e:
                 console.print(f"[red]{e}[/red]")
                 sys.exit(1)
+            except Exception as e:
+                err_msg = str(e)
+                if "401" in err_msg or "auth" in err_msg.lower() or "api_key" in err_msg.lower():
+                    console.print(f"[red]API authentication failed. Please check your API key in .env[/red]")
+                    console.print(f"[dim]{err_msg[:200]}[/dim]")
+                else:
+                    console.print(f"[red]Content generation failed: {err_msg[:200]}[/red]")
+                sys.exit(1)
 
             console.print(Panel(
                 f"[bold]{content.title}[/bold]\n\n{content.content}\n\n"
