@@ -170,24 +170,22 @@ class XiaohongshuPlatform(AbstractPlatform):
 
             # Step 3: Fill title (editor appears after image upload)
             if post.title:
-                title_input = await page.wait_for_selector(
+                await page.wait_for_selector(
                     sel.PUBLISH_TITLE_INPUT, timeout=15000
                 )
-                if title_input:
-                    await human_click(title_input)
-                    await short_delay()
-                    await title_input.fill(post.title[:20])  # XHS title max ~20 chars
-                    await short_delay()
+                await human_click(page, sel.PUBLISH_TITLE_INPUT)
+                await short_delay()
+                await page.fill(sel.PUBLISH_TITLE_INPUT, post.title[:20])  # XHS title max ~20 chars
+                await short_delay()
 
             # Step 4: Fill content
-            content_el = await page.wait_for_selector(
+            await page.wait_for_selector(
                 sel.PUBLISH_CONTENT_INPUT, timeout=10000
             )
-            if content_el:
-                await human_click(content_el)
-                await short_delay()
-                await human_type(page, post.content)
-                await random_delay(1, 3)
+            await human_click(page, sel.PUBLISH_CONTENT_INPUT)
+            await short_delay()
+            await human_type(page, sel.PUBLISH_CONTENT_INPUT, post.content)
+            await random_delay(1, 3)
 
             # Step 5: Add topic tags via # in content area
             for tag in post.tags[:5]:
@@ -196,11 +194,10 @@ class XiaohongshuPlatform(AbstractPlatform):
 
             # Step 6: Submit
             await random_delay(2, 4)
-            submit_btn = await page.wait_for_selector(
+            await page.wait_for_selector(
                 sel.PUBLISH_SUBMIT_BTN, timeout=10000
             )
-            if submit_btn:
-                await human_click(submit_btn)
+            await human_click(page, sel.PUBLISH_SUBMIT_BTN)
 
             # Wait for navigation or success indicator
             try:
