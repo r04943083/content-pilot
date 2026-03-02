@@ -13,7 +13,7 @@ AI-driven social media automation tool for Chinese platforms.
 ### Features
 
 - **Multi-platform support**: Xiaohongshu, Douyin, Bilibili, Weibo
-- **AI content generation**: Claude API & OpenAI API with platform-optimized prompts
+- **AI content generation**: Qwen, GLM, OpenAI, Claude — with platform-optimized prompts
 - **QR code login**: Scan-to-login for all platforms with session persistence
 - **Scheduled publishing**: Cron-based scheduling with optimal posting times
 - **Analytics tracking**: Views, likes, comments, follower growth trends
@@ -23,7 +23,7 @@ AI-driven social media automation tool for Chinese platforms.
 ### Requirements
 
 - Python 3.11+
-- An API key: Anthropic (Claude) or OpenAI
+- An API key: Qwen (阿里千问), GLM (智谱), OpenAI, or Anthropic (Claude)
 
 ### Installation
 
@@ -52,8 +52,16 @@ Then edit `.env` to add your API key:
 
 ```bash
 nano .env
-# Set CP_AI__ANTHROPIC_API_KEY=sk-ant-... (for Claude)
-# or  CP_AI__OPENAI_API_KEY=sk-...       (for OpenAI, also set CP_AI__PROVIDER=openai)
+# Default provider is Qwen (千问):
+# CP_AI__QWEN_API_KEY=sk-...
+#
+# Or use GLM (智谱):
+# CP_AI__PROVIDER=glm
+# CP_AI__GLM_API_KEY=...
+#
+# Or OpenAI / Claude:
+# CP_AI__PROVIDER=openai   CP_AI__OPENAI_API_KEY=sk-...
+# CP_AI__PROVIDER=claude   CP_AI__ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ### Quick Start
@@ -117,7 +125,7 @@ Configuration uses three layers (later overrides earlier):
 CLI (Click) → App Orchestrator → Platform Connectors (Playwright)
                 ↓                        ↓
          Content Generator          Browser Manager
-         (Claude/OpenAI)            (Stealth + Sessions)
+         (Qwen/GLM/OpenAI/Claude)  (Stealth + Sessions)
                 ↓                        ↓
          Scheduler (APScheduler)    SQLite Database
                 ↓
@@ -133,7 +141,7 @@ CLI (Click) → App Orchestrator → Platform Connectors (Playwright)
 ### 功能特性
 
 - **多平台支持**: 小红书、抖音、B站、微博
-- **AI 内容生成**: Claude API 和 OpenAI API，针对各平台优化的 prompt
+- **AI 内容生成**: 千问、智谱 GLM、OpenAI、Claude，针对各平台优化的 prompt
 - **扫码登录**: 所有平台支持扫码登录，会话持久化
 - **定时发布**: 基于 Cron 的定时调度，内置最佳发布时间建议
 - **数据分析**: 浏览、点赞、评论、粉丝增长趋势
@@ -143,7 +151,7 @@ CLI (Click) → App Orchestrator → Platform Connectors (Playwright)
 ### 系统要求
 
 - Python 3.11+
-- API Key: Anthropic (Claude) 或 OpenAI
+- API Key: 千问 (Qwen)、智谱 (GLM)、OpenAI 或 Anthropic (Claude)
 
 ### 安装
 
@@ -172,8 +180,16 @@ source .venv/bin/activate
 
 ```bash
 nano .env
-# 设置 CP_AI__ANTHROPIC_API_KEY=sk-ant-... (用 Claude)
-# 或   CP_AI__OPENAI_API_KEY=sk-...       (用 OpenAI，同时设 CP_AI__PROVIDER=openai)
+# 默认使用千问 (Qwen):
+# CP_AI__QWEN_API_KEY=sk-...
+#
+# 或使用智谱 GLM:
+# CP_AI__PROVIDER=glm
+# CP_AI__GLM_API_KEY=...
+#
+# 或使用 OpenAI / Claude:
+# CP_AI__PROVIDER=openai   CP_AI__OPENAI_API_KEY=sk-...
+# CP_AI__PROVIDER=claude   CP_AI__ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ### 快速上手
@@ -242,7 +258,8 @@ bash install.sh
 ```
 
 **Q: 如何切换 AI 提供商？**
-编辑 `.env`，设置 `CP_AI__PROVIDER=openai` 并填入 OpenAI API Key。
+编辑 `.env`，设置 `CP_AI__PROVIDER=qwen|glm|openai|claude` 并填入对应 API Key。
+默认为 `qwen`（千问），推荐国内用户使用千问或 GLM。
 
 ### 法律声明
 

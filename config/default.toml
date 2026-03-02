@@ -4,13 +4,20 @@ data_dir = "data"
 log_level = "INFO"
 
 [ai]
-provider = "claude"  # "claude" or "openai"
+provider = "qwen"  # "qwen", "glm", "openai", or "claude"
 anthropic_api_key = ""
 openai_api_key = ""
+qwen_api_key = ""
+glm_api_key = ""
 # Model selection
 claude_model = "claude-sonnet-4-20250514"
 openai_model = "gpt-4o"
+qwen_model = "qwen-plus"
+glm_model = "glm-4-flash"
 dalle_model = "dall-e-3"
+# Base URLs for OpenAI-compatible providers
+qwen_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+glm_base_url = "https://open.bigmodel.cn/api/paas/v4/"
 # Generation settings
 max_tokens = 2000
 temperature = 0.7

@@ -1,4 +1,4 @@
-"""AI content generation engine supporting Claude and OpenAI."""
+"""AI content generation engine supporting Claude, OpenAI, Qwen, and GLM."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ class GeneratedContent:
 
 
 class ContentGenerator:
-    """Generates platform-optimized content using Claude or OpenAI."""
+    """Generates platform-optimized content using Claude, OpenAI, Qwen, or GLM."""
 
     def __init__(self) -> None:
         self._settings = get_settings()
@@ -40,10 +40,32 @@ class ContentGenerator:
             raw = await self._generate_claude(prompt)
         elif provider == "openai":
             raw = await self._generate_openai(prompt)
+        elif provider == "qwen":
+            raw = await self._generate_qwen(prompt)
+        elif provider == "glm":
+            raw = await self._generate_glm(prompt)
         else:
             raise ValueError(f"Unknown AI provider: {provider}")
 
         return self._parse_response(raw, platform, style)
+
+    async def _generate_openai_compatible(
+        self, prompt: str, *, api_key: str, base_url: str | None, model: str
+    ) -> str:
+        """Common method for all OpenAI-compatible API calls."""
+        import openai
+
+        kwargs: dict = {"api_key": api_key}
+        if base_url:
+            kwargs["base_url"] = base_url
+        client = openai.AsyncOpenAI(**kwargs)
+        response = await client.chat.completions.create(
+            model=model,
+            max_tokens=self._settings.ai.max_tokens,
+            temperature=self._settings.ai.temperature,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response.choices[0].message.content or ""
 
     async def _generate_claude(self, prompt: str) -> str:
         import anthropic
@@ -60,16 +82,28 @@ class ContentGenerator:
         return message.content[0].text
 
     async def _generate_openai(self, prompt: str) -> str:
-        import openai
-
-        client = openai.AsyncOpenAI(api_key=self._settings.ai.openai_api_key)
-        response = await client.chat.completions.create(
+        return await self._generate_openai_compatible(
+            prompt,
+            api_key=self._settings.ai.openai_api_key,
+            base_url=None,
             model=self._settings.ai.openai_model,
-            max_tokens=self._settings.ai.max_tokens,
-            temperature=self._settings.ai.temperature,
-            messages=[{"role": "user", "content": prompt}],
         )
-        return response.choices[0].message.content or ""
+
+    async def _generate_qwen(self, prompt: str) -> str:
+        return await self._generate_openai_compatible(
+            prompt,
+            api_key=self._settings.ai.qwen_api_key,
+            base_url=self._settings.ai.qwen_base_url,
+            model=self._settings.ai.qwen_model,
+        )
+
+    async def _generate_glm(self, prompt: str) -> str:
+        return await self._generate_openai_compatible(
+            prompt,
+            api_key=self._settings.ai.glm_api_key,
+            base_url=self._settings.ai.glm_base_url,
+            model=self._settings.ai.glm_model,
+        )
 
     async def generate_image(self, prompt: str) -> bytes | None:
         """Generate an image using DALL-E. Returns PNG bytes or None."""

@@ -533,6 +533,10 @@ def config_validate() -> None:
             console.print("[yellow]Warning: Anthropic API key not set.[/yellow]")
         if not settings.ai.openai_api_key and settings.ai.provider == "openai":
             console.print("[yellow]Warning: OpenAI API key not set.[/yellow]")
+        if not settings.ai.qwen_api_key and settings.ai.provider == "qwen":
+            console.print("[yellow]Warning: Qwen API key not set (CP_AI__QWEN_API_KEY).[/yellow]")
+        if not settings.ai.glm_api_key and settings.ai.provider == "glm":
+            console.print("[yellow]Warning: GLM API key not set (CP_AI__GLM_API_KEY).[/yellow]")
     except Exception as e:
         console.print(f"[red]Configuration error: {e}[/red]")
 

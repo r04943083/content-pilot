@@ -37,12 +37,18 @@ class GeneralConfig(BaseModel):
 
 
 class AIConfig(BaseModel):
-    provider: Literal["claude", "openai"] = "claude"
+    provider: Literal["claude", "openai", "qwen", "glm"] = "qwen"
     anthropic_api_key: str = ""
     openai_api_key: str = ""
+    qwen_api_key: str = ""
+    glm_api_key: str = ""
     claude_model: str = "claude-sonnet-4-20250514"
     openai_model: str = "gpt-4o"
+    qwen_model: str = "qwen-plus"
+    glm_model: str = "glm-4-flash"
     dalle_model: str = "dall-e-3"
+    qwen_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    glm_base_url: str = "https://open.bigmodel.cn/api/paas/v4/"
     max_tokens: int = 2000
     temperature: float = 0.7
 
