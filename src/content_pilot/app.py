@@ -88,7 +88,7 @@ class App:
         statuses = []
         for account in accounts:
             platform = account["platform"]
-            context = await self.browser.get_context(platform, headless=True)
+            context = await self.browser.get_context(platform)
             try:
                 connector = PlatformRegistry.create(platform, context)
                 session_valid = await connector.check_session()
@@ -154,7 +154,7 @@ class App:
         # Update status
         await self.db.update_post(post_id, status="publishing")
 
-        context = await self.browser.get_context(platform, headless=True)
+        context = await self.browser.get_context(platform)
         try:
             connector = PlatformRegistry.create(platform, context)
 
