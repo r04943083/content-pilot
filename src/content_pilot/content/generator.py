@@ -26,6 +26,22 @@ class ContentGenerator:
     def __init__(self) -> None:
         self._settings = get_settings()
 
+    def _check_api_key(self) -> None:
+        """Raise early if the API key for the active provider is missing."""
+        ai = self._settings.ai
+        key_map = {
+            "claude": ("anthropic_api_key", "CP_AI__ANTHROPIC_API_KEY"),
+            "openai": ("openai_api_key", "CP_AI__OPENAI_API_KEY"),
+            "qwen": ("qwen_api_key", "CP_AI__QWEN_API_KEY"),
+            "glm": ("glm_api_key", "CP_AI__GLM_API_KEY"),
+        }
+        field, env_var = key_map.get(ai.provider, ("", ""))
+        if field and not getattr(ai, field, ""):
+            raise RuntimeError(
+                f"{ai.provider.upper()} API key not set. "
+                f"Please set {env_var} in your .env file."
+            )
+
     async def generate(
         self,
         topic: str,
@@ -33,6 +49,7 @@ class ContentGenerator:
         style: str = "tutorial",
     ) -> GeneratedContent:
         """Generate content for the given topic, platform, and style."""
+        self._check_api_key()
         prompt = get_prompt(platform, style, topic)
         provider = self._settings.ai.provider
 

@@ -144,7 +144,11 @@ def generate(topic: str, platform: str, style: str) -> None:
         try:
             console.print(f"Generating [bold]{style}[/bold] content about [bold]{topic}[/bold] for [cyan]{platform}[/cyan]...")
 
-            post_id, content = await app.generate_content(topic, platform, style)
+            try:
+                post_id, content = await app.generate_content(topic, platform, style)
+            except RuntimeError as e:
+                console.print(f"[red]{e}[/red]")
+                sys.exit(1)
 
             console.print(Panel(
                 f"[bold]{content.title}[/bold]\n\n{content.content}\n\n"

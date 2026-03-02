@@ -71,7 +71,17 @@ ensure_venv_works() {
         fi
     fi
     rm -rf "$testdir"
-    info "Python venv module is working"
+}
+
+# --- Check if Playwright system deps are already installed ---
+playwright_deps_ok() {
+    # Quick check: try to find the key libs that Chromium needs
+    for lib in libnspr4.so libnss3.so libatk-1.0.so.0; do
+        if ! ldconfig -p 2>/dev/null | grep -q "$lib"; then
+            return 1
+        fi
+    done
+    return 0
 }
 
 # --- Main ---
@@ -90,39 +100,45 @@ if [ -d "$VENV_DIR" ] && [ ! -f "$VENV_DIR/bin/activate" ]; then
 fi
 
 if [ -d "$VENV_DIR" ]; then
-    info "Virtual environment already exists at $VENV_DIR"
+    info "Virtual environment already exists"
 else
     info "Creating virtual environment..."
     "$PYTHON" -m venv "$VENV_DIR"
 fi
 
 # Activate and install
-info "Installing dependencies..."
 # shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
+info "Installing dependencies..."
 pip install --upgrade pip -q
-pip install -e ".[dev]"
+pip install -e ".[dev]" -q
 
 # Install Playwright browser + system dependencies
-info "Installing Playwright Chromium..."
-playwright install chromium
-info "Installing Playwright system dependencies (may need sudo)..."
-if command -v apt-get &>/dev/null; then
-    playwright install-deps chromium 2>/dev/null || {
-        warn "Auto-install of system deps failed. Trying with sudo..."
-        sudo playwright install-deps chromium
-    }
+if playwright install --dry-run chromium 2>&1 | grep -q "already"; then
+    info "Playwright Chromium already installed"
 else
-    warn "Non-Debian system detected. If browser launch fails, run:"
-    warn "  playwright install-deps chromium"
+    info "Installing Playwright Chromium..."
+    playwright install chromium
+fi
+
+if playwright_deps_ok; then
+    info "Playwright system dependencies already installed"
+else
+    info "Installing Playwright system dependencies (needs sudo)..."
+    if command -v apt-get &>/dev/null; then
+        sudo playwright install-deps chromium
+    else
+        warn "Non-Debian system. If browser launch fails, run:"
+        warn "  sudo playwright install-deps chromium"
+    fi
 fi
 
 # Setup .env if not exists
 if [ ! -f .env ]; then
     cp .env.example .env
-    info "Created .env from .env.example"
+    info "Created .env from .env.example — edit it to add your API key"
 else
-    info ".env already exists, skipping."
+    info ".env already exists, skipping"
 fi
 
 # Create data directories
@@ -133,15 +149,8 @@ info "Installation complete!"
 echo ""
 echo "  Next steps:"
 echo ""
-echo "  1. Activate the virtual environment:"
-echo "       source $VENV_DIR/bin/activate"
-echo ""
-echo "  2. Add your API key to .env:"
-echo "       nano .env"
-echo ""
-echo "  3. Login to a platform:"
-echo "       content-pilot login --platform xiaohongshu"
-echo ""
-echo "  4. Generate content:"
-echo "       content-pilot generate --topic \"Python学习技巧\" --platform xiaohongshu"
+echo "  1. source $VENV_DIR/bin/activate"
+echo "  2. nano .env              # add your API key"
+echo "  3. content-pilot login --platform xiaohongshu"
+echo "  4. content-pilot generate --topic \"Python学习技巧\" --platform xiaohongshu"
 echo ""

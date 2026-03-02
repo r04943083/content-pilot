@@ -45,15 +45,7 @@ class XiaohongshuPlatform(AbstractPlatform):
                 sel.LOGIN_QR_CODE, timeout=15000
             )
             if qr_element:
-                logger.info("QR code detected. Please scan with Xiaohongshu app.")
-                # Try to extract QR data for terminal display
-                qr_src = await qr_element.get_attribute("src")
-                if qr_src:
-                    from content_pilot.utils.qr import display_qr_in_terminal
-                    try:
-                        display_qr_in_terminal(qr_src)
-                    except Exception:
-                        logger.info("Scan the QR code in the browser window.")
+                logger.info("QR code detected. Please scan with Xiaohongshu app in the browser window.")
 
             # Wait for login success (up to 120 seconds).
             # After QR scan the page navigates away from /login,
