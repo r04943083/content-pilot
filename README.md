@@ -23,15 +23,14 @@ AI-driven social media automation tool for Chinese platforms.
 ### Installation
 
 ```bash
-# Clone and install
-git clone https://github.com/yourname/content-pilot.git
+# Clone and install (one command)
+git clone https://github.com/r04943083/content-pilot.git
 cd content-pilot
-pip install -e ".[dev]"
-playwright install chromium
+bash install.sh
+source .venv/bin/activate
 
-# Configure
-cp .env.example .env
 # Edit .env with your API keys
+nano .env
 ```
 
 ### Quick Start
@@ -110,15 +109,14 @@ CLI (Click) → App Orchestrator → Platform Connectors (Playwright)
 ### 安装
 
 ```bash
-# 克隆并安装
-git clone https://github.com/yourname/content-pilot.git
+# 克隆并一键安装
+git clone https://github.com/r04943083/content-pilot.git
 cd content-pilot
-pip install -e ".[dev]"
-playwright install chromium
+bash install.sh
+source .venv/bin/activate
 
-# 配置
-cp .env.example .env
 # 编辑 .env 填入 API key
+nano .env
 ```
 
 ### 快速上手
