@@ -141,12 +141,17 @@ class XiaohongshuPlatform(AbstractPlatform):
             await random_delay(3, 6)
 
             # Step 1: Click "上传图文" tab
+            tab_clicked = False
             tabs = await page.query_selector_all(sel.PUBLISH_TAB_IMAGE)
             for tab in tabs:
                 text = (await tab.text_content() or "").strip()
                 if "图文" in text:
                     await tab.evaluate("e => e.click()")
+                    tab_clicked = True
+                    logger.info("Clicked '上传图文' tab")
                     break
+            if not tab_clicked:
+                logger.warning("Could not find '上传图文' tab, trying to proceed anyway")
             await random_delay(2, 4)
 
             # Step 2: Upload images (XHS requires at least one)
@@ -159,7 +164,19 @@ class XiaohongshuPlatform(AbstractPlatform):
                 image_paths = [placeholder]
                 logger.info("No images provided, using placeholder image")
 
-            file_input = await page.query_selector(sel.PUBLISH_IMAGE_UPLOAD)
+            # Wait for file input to appear (may take time after tab switch)
+            file_input = None
+            for selector in [sel.PUBLISH_IMAGE_UPLOAD, 'input[type="file"]']:
+                try:
+                    file_input = await page.wait_for_selector(
+                        selector, timeout=10000, state="attached"
+                    )
+                    if file_input:
+                        logger.info("Found upload input via: %s", selector)
+                        break
+                except Exception:
+                    continue
+
             if file_input:
                 await file_input.set_input_files(image_paths)
                 await random_delay(4, 8)
