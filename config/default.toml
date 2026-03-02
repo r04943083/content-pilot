@@ -5,10 +5,7 @@ log_level = "INFO"
 
 [ai]
 provider = "qwen"  # "qwen", "glm", "openai", or "claude"
-anthropic_api_key = ""
-openai_api_key = ""
-qwen_api_key = ""
-glm_api_key = ""
+# API keys: set via .env or environment variables, NOT here.
 # Model selection
 claude_model = "claude-sonnet-4-20250514"
 openai_model = "gpt-4o"

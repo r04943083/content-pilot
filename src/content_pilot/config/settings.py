@@ -133,8 +133,10 @@ class Settings(BaseSettings):
             home = _load_toml(home_config)
             defaults = _deep_merge(defaults, home)
 
-        # Pydantic Settings handles env var overlay
-        return cls(**defaults)
+        # Pydantic Settings handles env var overlay.
+        # Pass .env path relative to project root so it works from any CWD.
+        env_file = project_root / ".env"
+        return cls(_env_file=str(env_file) if env_file.exists() else None, **defaults)
 
 
 def _deep_merge(base: dict, override: dict) -> dict:
