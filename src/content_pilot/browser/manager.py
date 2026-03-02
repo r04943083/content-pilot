@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 from playwright.async_api import BrowserContext, Playwright, async_playwright
 
 from content_pilot.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 # Minimal stealth script to mask automation signals
 _STEALTH_JS = """
@@ -78,6 +81,11 @@ class BrowserManager:
 
         state_path = self._state_path(platform)
         storage_state = str(state_path) if state_path.exists() else None
+        logger.info(
+            "Browser: headless=%s, session=%s",
+            headless,
+            state_path if storage_state else "none",
+        )
 
         context = await self._browser.new_context(
             storage_state=storage_state,

@@ -69,10 +69,18 @@ class XiaohongshuPlatform(AbstractPlatform):
             await page.goto(
                 CREATOR_URL, wait_until="domcontentloaded", timeout=30000
             )
-            await random_delay(2, 4)
-            # If redirected to login page, session is invalid
+            # Wait for SPA redirect to settle (to /login or /new/home)
+            try:
+                await page.wait_for_url(
+                    lambda url: "login" in url or "/new/" in url,
+                    timeout=10000,
+                )
+            except Exception:
+                pass  # URL might already be at the right place
+            logger.info("Session check URL: %s", page.url)
             return "login" not in page.url.lower()
-        except Exception:
+        except Exception as e:
+            logger.error("Session check failed: %s", e)
             return False
         finally:
             await page.close()
