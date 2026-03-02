@@ -55,9 +55,12 @@ class XiaohongshuPlatform(AbstractPlatform):
                     except Exception:
                         logger.info("Scan the QR code in the browser window.")
 
-            # Wait for login success (up to 120 seconds)
-            await page.wait_for_selector(
-                sel.LOGIN_SUCCESS_INDICATOR, timeout=120000
+            # Wait for login success (up to 120 seconds).
+            # After QR scan the page navigates away from /login,
+            # so we detect success by URL change OR a DOM indicator.
+            await page.wait_for_url(
+                lambda url: "login" not in url.lower(),
+                timeout=120000,
             )
             logger.info("Login successful!")
             return True

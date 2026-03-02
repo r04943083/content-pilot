@@ -131,9 +131,10 @@ class SchedulerEngine:
         logger.info("Scheduler started")
 
     def stop(self) -> None:
-        """Stop the scheduler."""
-        self._scheduler.shutdown(wait=False)
-        logger.info("Scheduler stopped")
+        """Stop the scheduler if it is running."""
+        if self._scheduler.running:
+            self._scheduler.shutdown(wait=False)
+            logger.info("Scheduler stopped")
 
     async def run_forever(self) -> None:
         """Start scheduler and run until interrupted."""

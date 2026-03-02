@@ -3,9 +3,11 @@
 Centralized here so UI changes only require updating one file.
 """
 
-# Login page
-LOGIN_QR_CODE = 'img[class*="qrcode"], canvas[class*="qrcode"], .qrcode-img img'
-LOGIN_SUCCESS_INDICATOR = '[class*="user-info"], [class*="creator-home"], .sidebar'
+# Login page — XHS uses CSS-in-JS, class names are dynamic hashes.
+# The QR code is a base64 data-URI <img> inside the login form.
+LOGIN_QR_CODE = 'img[src^="data:image/png"]'
+# After scan, page navigates away from /login
+LOGIN_SUCCESS_INDICATOR = '[class*="user-info"], [class*="creator-home"], .sidebar, [class*="menu"]'
 
 # Creator center navigation
 NAV_PUBLISH = 'a[href*="publish"], .publish-btn, [class*="publish"]'
