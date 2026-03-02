@@ -20,29 +20,53 @@ AI-driven social media automation tool for Chinese platforms.
 - **Safety controls**: Rate limiting, content validation, human review workflow
 - **Anti-detection**: Stealth browser, human-like delays, conservative publishing rates
 
+### Requirements
+
+- Python 3.11+
+- An API key: Anthropic (Claude) or OpenAI
+
 ### Installation
 
 ```bash
-# Clone and install (one command)
 git clone https://github.com/r04943083/content-pilot.git
 cd content-pilot
 bash install.sh
-source .venv/bin/activate
+```
 
-# Edit .env with your API keys
+The install script will automatically:
+- Detect Python 3.11+ on your system
+- Install `python3-venv` if missing (may ask for sudo password)
+- Create a `.venv` virtual environment
+- Install all Python dependencies
+- Install Playwright Chromium browser
+- Create `.env` from template
+
+After installation, every time you open a new terminal:
+
+```bash
+cd content-pilot
+source .venv/bin/activate
+```
+
+Then edit `.env` to add your API key:
+
+```bash
 nano .env
+# Set CP_AI__ANTHROPIC_API_KEY=sk-ant-... (for Claude)
+# or  CP_AI__OPENAI_API_KEY=sk-...       (for OpenAI, also set CP_AI__PROVIDER=openai)
 ```
 
 ### Quick Start
 
 ```bash
-# 1. Login to a platform
+# 1. Login to a platform (opens browser for QR scan)
 content-pilot login --platform xiaohongshu
 
 # 2. Generate content
 content-pilot generate --topic "Python learning tips" --platform xiaohongshu --style tutorial
 
-# 3. Publish
+# 3. Publish (use --dry-run to preview first)
+content-pilot publish --content-id 1 --dry-run
 content-pilot publish --content-id 1
 
 # 4. Check analytics
@@ -68,6 +92,16 @@ content-pilot run
 | `analytics summary\|growth\|post\|export` | View analytics |
 | `config show\|validate` | Configuration management |
 | `run` | Start scheduling daemon |
+
+### Content Styles
+
+| Style | Description |
+|-------|-------------|
+| `tutorial` | Step-by-step guide |
+| `review` | Product/service review |
+| `lifestyle` | Personal life sharing |
+| `knowledge` | Knowledge/educational |
+| `story` | Narrative storytelling |
 
 ### Configuration
 
@@ -106,29 +140,53 @@ CLI (Click) → App Orchestrator → Platform Connectors (Playwright)
 - **安全控制**: 频率限制、内容校验、人工审核流程
 - **反检测**: 隐身浏览器、仿人延迟、保守发布频率
 
+### 系统要求
+
+- Python 3.11+
+- API Key: Anthropic (Claude) 或 OpenAI
+
 ### 安装
 
 ```bash
-# 克隆并一键安装
 git clone https://github.com/r04943083/content-pilot.git
 cd content-pilot
 bash install.sh
-source .venv/bin/activate
+```
 
-# 编辑 .env 填入 API key
+安装脚本会自动完成：
+- 检测系统 Python 3.11+ 版本
+- 缺少 `python3-venv` 时自动安装（可能需要 sudo 密码）
+- 创建 `.venv` 虚拟环境
+- 安装所有 Python 依赖
+- 安装 Playwright Chromium 浏览器
+- 从模板创建 `.env` 文件
+
+安装完成后，每次打开新终端需要先激活环境：
+
+```bash
+cd content-pilot
+source .venv/bin/activate
+```
+
+然后编辑 `.env` 填入 API Key：
+
+```bash
 nano .env
+# 设置 CP_AI__ANTHROPIC_API_KEY=sk-ant-... (用 Claude)
+# 或   CP_AI__OPENAI_API_KEY=sk-...       (用 OpenAI，同时设 CP_AI__PROVIDER=openai)
 ```
 
 ### 快速上手
 
 ```bash
-# 1. 登录平台
+# 1. 登录平台（会打开浏览器扫码）
 content-pilot login --platform xiaohongshu
 
 # 2. 生成内容
 content-pilot generate --topic "Python学习技巧" --platform xiaohongshu --style tutorial
 
-# 3. 发布
+# 3. 发布（先用 --dry-run 预览）
+content-pilot publish --content-id 1 --dry-run
 content-pilot publish --content-id 1
 
 # 4. 查看数据
@@ -141,6 +199,16 @@ content-pilot schedule add --name "每日发帖" --platform xiaohongshu \
 # 6. 启动守护进程
 content-pilot run
 ```
+
+### 内容风格
+
+| 风格 | 说明 |
+|------|------|
+| `tutorial` | 教程 / 步骤讲解 |
+| `review` | 测评 / 产品点评 |
+| `lifestyle` | 生活分享 |
+| `knowledge` | 知识科普 |
+| `story` | 故事叙述 |
 
 ### 最佳发布时间
 
@@ -160,6 +228,21 @@ content-pilot login --platform xiaohongshu
 # 然后使用 Docker 运行守护进程
 docker compose up -d
 ```
+
+### 常见问题
+
+**Q: `bash install.sh` 提示权限错误？**
+安装 `python3-venv` 时需要 sudo 密码，脚本会自动提示。
+
+**Q: `source .venv/bin/activate` 报错 No such file？**
+删掉旧的 `.venv` 重新运行 `bash install.sh`：
+```bash
+rm -rf .venv
+bash install.sh
+```
+
+**Q: 如何切换 AI 提供商？**
+编辑 `.env`，设置 `CP_AI__PROVIDER=openai` 并填入 OpenAI API Key。
 
 ### 法律声明
 

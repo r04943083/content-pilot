@@ -29,26 +29,49 @@ find_python() {
         fi
     done
     error "Python 3.11+ is required but not found."
-    error "Install it with: sudo apt install python3 (Ubuntu/Debian)"
+    error "Install with:"
+    error "  Ubuntu/Debian: sudo apt install python3"
+    error "  macOS: brew install python@3.12"
     exit 1
 }
 
-# --- Ensure venv module is available ---
-ensure_venv_module() {
-    if ! "$PYTHON" -c "import venv" &>/dev/null; then
-        warn "python3-venv not installed. Attempting to install..."
+# --- Ensure venv works properly (pip + activate must exist) ---
+ensure_venv_works() {
+    local testdir
+    testdir=$(mktemp -d)
+    "$PYTHON" -m venv "$testdir/test" 2>/dev/null || true
+
+    if [ ! -f "$testdir/test/bin/activate" ] || [ ! -f "$testdir/test/bin/pip" ]; then
+        rm -rf "$testdir"
+        warn "python3-venv is missing or broken. Installing..."
         version=$("$PYTHON" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-        if command -v apt &>/dev/null; then
-            sudo apt update && sudo apt install -y "python${version}-venv"
+        if command -v apt-get &>/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq "python${version}-venv"
         elif command -v dnf &>/dev/null; then
-            sudo dnf install -y "python${version}-venv" || sudo dnf install -y python3-virtualenv
+            sudo dnf install -y "python${version}-venv" 2>/dev/null || sudo dnf install -y python3-virtualenv
         elif command -v pacman &>/dev/null; then
             sudo pacman -S --noconfirm python
+        elif command -v brew &>/dev/null; then
+            info "macOS detected — venv should be bundled with Homebrew Python."
         else
-            error "Cannot auto-install python3-venv. Please install it manually."
+            error "Cannot auto-install python3-venv."
+            error "Please install it manually:"
+            error "  Ubuntu/Debian: sudo apt install python${version}-venv"
+            exit 1
+        fi
+
+        # Verify fix worked
+        rm -rf "$testdir"
+        testdir=$(mktemp -d)
+        "$PYTHON" -m venv "$testdir/test" 2>/dev/null || true
+        if [ ! -f "$testdir/test/bin/activate" ]; then
+            rm -rf "$testdir"
+            error "python3-venv still broken after install. Please fix manually."
             exit 1
         fi
     fi
+    rm -rf "$testdir"
+    info "Python venv module is working"
 }
 
 # --- Main ---
@@ -58,11 +81,16 @@ echo ""
 cd "$(dirname "$0")"
 
 find_python
-ensure_venv_module
+ensure_venv_works
 
-# Create venv
+# Create venv (delete broken one if activate is missing)
+if [ -d "$VENV_DIR" ] && [ ! -f "$VENV_DIR/bin/activate" ]; then
+    warn "Existing venv is broken (no activate script). Recreating..."
+    rm -rf "$VENV_DIR"
+fi
+
 if [ -d "$VENV_DIR" ]; then
-    warn "Virtual environment already exists at $VENV_DIR"
+    info "Virtual environment already exists at $VENV_DIR"
 else
     info "Creating virtual environment..."
     "$PYTHON" -m venv "$VENV_DIR"
@@ -70,6 +98,7 @@ fi
 
 # Activate and install
 info "Installing dependencies..."
+# shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
 pip install --upgrade pip -q
 pip install -e ".[dev]"
@@ -81,7 +110,7 @@ playwright install chromium
 # Setup .env if not exists
 if [ ! -f .env ]; then
     cp .env.example .env
-    info "Created .env from .env.example — please edit it with your API keys."
+    info "Created .env from .env.example"
 else
     info ".env already exists, skipping."
 fi
@@ -92,13 +121,17 @@ mkdir -p data/browser_contexts
 echo ""
 info "Installation complete!"
 echo ""
-echo "  Activate the virtual environment:"
-echo "    source $VENV_DIR/bin/activate"
+echo "  Next steps:"
 echo ""
-echo "  Then run:"
-echo "    content-pilot --help"
+echo "  1. Activate the virtual environment:"
+echo "       source $VENV_DIR/bin/activate"
 echo ""
-echo "  Quick start:"
-echo "    content-pilot login --platform xiaohongshu"
-echo "    content-pilot generate --topic \"Python学习技巧\" --platform xiaohongshu"
+echo "  2. Add your API key to .env:"
+echo "       nano .env"
+echo ""
+echo "  3. Login to a platform:"
+echo "       content-pilot login --platform xiaohongshu"
+echo ""
+echo "  4. Generate content:"
+echo "       content-pilot generate --topic \"Python学习技巧\" --platform xiaohongshu"
 echo ""
