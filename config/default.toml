@@ -9,11 +9,11 @@ provider = "qwen"  # "qwen", "glm", "openai", or "claude"
 # Model selection
 claude_model = "claude-sonnet-4-20250514"
 openai_model = "gpt-4o"
-qwen_model = "qwen-plus"
+qwen_model = "qwen3-max-2026-01-23"
 glm_model = "glm-4-flash"
 dalle_model = "dall-e-3"
-# Base URLs for OpenAI-compatible providers
-qwen_base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+# Base URLs
+qwen_base_url = "https://coding.dashscope.aliyuncs.com/apps/anthropic"
 glm_base_url = "https://open.bigmodel.cn/api/paas/v4/"
 # Generation settings
 max_tokens = 2000

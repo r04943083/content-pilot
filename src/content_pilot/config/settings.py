@@ -44,10 +44,10 @@ class AIConfig(BaseModel):
     glm_api_key: str = ""
     claude_model: str = "claude-sonnet-4-20250514"
     openai_model: str = "gpt-4o"
-    qwen_model: str = "qwen-plus"
+    qwen_model: str = "qwen3-max-2026-01-23"
     glm_model: str = "glm-4-flash"
     dalle_model: str = "dall-e-3"
-    qwen_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    qwen_base_url: str = "https://coding.dashscope.aliyuncs.com/apps/anthropic"
     glm_base_url: str = "https://open.bigmodel.cn/api/paas/v4/"
     max_tokens: int = 2000
     temperature: float = 0.7

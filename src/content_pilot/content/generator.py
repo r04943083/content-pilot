@@ -84,19 +84,31 @@ class ContentGenerator:
         )
         return response.choices[0].message.content or ""
 
-    async def _generate_claude(self, prompt: str) -> str:
+    async def _generate_anthropic_compatible(
+        self, prompt: str, *, api_key: str, base_url: str | None, model: str
+    ) -> str:
+        """Common method for all Anthropic-compatible API calls (Claude, Qwen)."""
         import anthropic
 
-        client = anthropic.AsyncAnthropic(
-            api_key=self._settings.ai.anthropic_api_key
-        )
+        kwargs: dict = {"api_key": api_key}
+        if base_url:
+            kwargs["base_url"] = base_url
+        client = anthropic.AsyncAnthropic(**kwargs)
         message = await client.messages.create(
-            model=self._settings.ai.claude_model,
+            model=model,
             max_tokens=self._settings.ai.max_tokens,
             temperature=self._settings.ai.temperature,
             messages=[{"role": "user", "content": prompt}],
         )
         return message.content[0].text
+
+    async def _generate_claude(self, prompt: str) -> str:
+        return await self._generate_anthropic_compatible(
+            prompt,
+            api_key=self._settings.ai.anthropic_api_key,
+            base_url=None,
+            model=self._settings.ai.claude_model,
+        )
 
     async def _generate_openai(self, prompt: str) -> str:
         return await self._generate_openai_compatible(
@@ -107,7 +119,7 @@ class ContentGenerator:
         )
 
     async def _generate_qwen(self, prompt: str) -> str:
-        return await self._generate_openai_compatible(
+        return await self._generate_anthropic_compatible(
             prompt,
             api_key=self._settings.ai.qwen_api_key,
             base_url=self._settings.ai.qwen_base_url,

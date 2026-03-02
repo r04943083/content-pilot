@@ -45,7 +45,7 @@ def test_qwen_provider_config():
         settings = Settings()
         assert settings.ai.provider == "qwen"
         assert settings.ai.qwen_api_key == "sk-test-qwen"
-        assert settings.ai.qwen_model == "qwen-plus"
+        assert settings.ai.qwen_model == "qwen3-max-2026-01-23"
         assert "dashscope.aliyuncs.com" in settings.ai.qwen_base_url
     finally:
         del os.environ["CP_AI__PROVIDER"]

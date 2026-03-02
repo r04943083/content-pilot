@@ -22,6 +22,7 @@ dependencies = [
     "playwright>=1.40",
     "click>=8.1",
     "apscheduler>=3.10",
+    "anthropic>=0.40",
     "openai>=1.10",
     "pydantic>=2.5",
     "pydantic-settings>=2.1",
@@ -33,9 +34,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-claude = [
-    "anthropic>=0.40",
-]
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
