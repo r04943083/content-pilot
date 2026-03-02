@@ -38,8 +38,13 @@ The install script will automatically:
 - Install `python3-venv` if missing (may ask for sudo password)
 - Create a `.venv` virtual environment
 - Install all Python dependencies
-- Install Playwright Chromium browser
+- Install Playwright Chromium browser and system dependencies
 - Create `.env` from template
+
+> **WSL2 / headless Linux users**: If browser launch fails with `libnspr4.so` errors, run:
+> ```bash
+> sudo playwright install-deps chromium
+> ```
 
 After installation, every time you open a new terminal:
 
@@ -166,8 +171,13 @@ bash install.sh
 - 缺少 `python3-venv` 时自动安装（可能需要 sudo 密码）
 - 创建 `.venv` 虚拟环境
 - 安装所有 Python 依赖
-- 安装 Playwright Chromium 浏览器
+- 安装 Playwright Chromium 浏览器及系统依赖
 - 从模板创建 `.env` 文件
+
+> **WSL2 / 无桌面 Linux 用户**：如果浏览器启动报错 `libnspr4.so` 找不到，手动运行：
+> ```bash
+> sudo playwright install-deps chromium
+> ```
 
 安装完成后，每次打开新终端需要先激活环境：
 
@@ -248,7 +258,7 @@ docker compose up -d
 ### 常见问题
 
 **Q: `bash install.sh` 提示权限错误？**
-安装 `python3-venv` 时需要 sudo 密码，脚本会自动提示。
+安装 `python3-venv` 或 Playwright 系统依赖时需要 sudo 密码，脚本会自动提示。
 
 **Q: `source .venv/bin/activate` 报错 No such file？**
 删掉旧的 `.venv` 重新运行 `bash install.sh`：
@@ -256,6 +266,19 @@ docker compose up -d
 rm -rf .venv
 bash install.sh
 ```
+
+**Q: 登录时报错 `TargetClosedError` / `libnspr4.so` 找不到？**
+Chromium 缺少系统依赖库，手动安装：
+```bash
+# 方法一（推荐）：
+sudo playwright install-deps chromium
+
+# 方法二（手动）：
+sudo apt install -y libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 \
+  libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 \
+  libgbm1 libpango-1.0-0 libcairo2 libasound2
+```
+WSL2 用户特别容易遇到此问题，因为 WSL 默认不装 GUI 相关库。
 
 **Q: 如何切换 AI 提供商？**
 编辑 `.env`，设置 `CP_AI__PROVIDER=qwen|glm|openai|claude` 并填入对应 API Key。

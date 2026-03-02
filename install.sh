@@ -103,9 +103,19 @@ source "$VENV_DIR/bin/activate"
 pip install --upgrade pip -q
 pip install -e ".[dev]"
 
-# Install Playwright browser
+# Install Playwright browser + system dependencies
 info "Installing Playwright Chromium..."
 playwright install chromium
+info "Installing Playwright system dependencies (may need sudo)..."
+if command -v apt-get &>/dev/null; then
+    playwright install-deps chromium 2>/dev/null || {
+        warn "Auto-install of system deps failed. Trying with sudo..."
+        sudo playwright install-deps chromium
+    }
+else
+    warn "Non-Debian system detected. If browser launch fails, run:"
+    warn "  playwright install-deps chromium"
+fi
 
 # Setup .env if not exists
 if [ ! -f .env ]; then
