@@ -72,26 +72,31 @@ nano .env
 ### Quick Start
 
 ```bash
-# 1. Login to a platform (opens browser for QR scan)
+# Step 1 — Login (opens browser, scan QR code with your phone)
 content-pilot login --platform xiaohongshu
 
-# 2. Generate content
+# Step 2 — Generate content (AI writes a draft, you review it)
+#   You'll be prompted to: approve / edit / regenerate / cancel
+#   Approved drafts are saved to the local database (not published yet)
 content-pilot generate --topic "Python learning tips" --platform xiaohongshu --style tutorial
 
-# 3. Publish (use --dry-run to preview first)
+# Step 3 — Preview before publishing (--dry-run = no actual publish)
 content-pilot publish --content-id 1 --dry-run
+
+# Step 4 — Publish for real
 content-pilot publish --content-id 1
 
-# 4. Check analytics
+# Step 5 — Check analytics after publishing
 content-pilot analytics summary
 
-# 5. Set up scheduled publishing
+# Step 6 (optional) — Set up scheduled auto-generation + publishing
 content-pilot schedule add --name "Daily Post" --platform xiaohongshu \
   --topic "Python Tips" --cron "0 20 * * *"
-
-# 6. Start the daemon
-content-pilot run
+content-pilot run   # start the scheduling daemon
 ```
+
+> **Workflow**: `login` → `generate` (AI draft) → `approve` → `publish` (post to platform).
+> Generate only creates a local draft. You must run `publish` to actually post it.
 
 ### CLI Reference
 
@@ -205,26 +210,31 @@ nano .env
 ### 快速上手
 
 ```bash
-# 1. 登录平台（会打开浏览器扫码）
+# 第一步 — 登录平台（打开浏览器，用手机扫码）
 content-pilot login --platform xiaohongshu
 
-# 2. 生成内容
+# 第二步 — 生成内容（AI 写草稿，你来审核）
+#   会提示你选择: approve(通过) / edit(编辑) / regenerate(重写) / cancel(取消)
+#   通过后草稿保存在本地数据库，还没有发布！
 content-pilot generate --topic "Python学习技巧" --platform xiaohongshu --style tutorial
 
-# 3. 发布（先用 --dry-run 预览）
+# 第三步 — 发布前预览（--dry-run 只看不发）
 content-pilot publish --content-id 1 --dry-run
+
+# 第四步 — 正式发布到平台
 content-pilot publish --content-id 1
 
-# 4. 查看数据
+# 第五步 — 发布后查看数据
 content-pilot analytics summary
 
-# 5. 设置定时发布
+# 第六步（可选）— 设置定时自动生成+发布
 content-pilot schedule add --name "每日发帖" --platform xiaohongshu \
   --topic "Python技巧" --cron "0 20 * * *"
-
-# 6. 启动守护进程
-content-pilot run
+content-pilot run   # 启动定时守护进程
 ```
+
+> **完整流程**：`login`(登录) → `generate`(AI生成草稿) → `approve`(审核通过) → `publish`(发布到平台)
+> generate 只是在本地生成草稿，必须执行 publish 才会真正发布到平台。
 
 ### 内容风格
 
