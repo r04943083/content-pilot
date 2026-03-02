@@ -1,0 +1,70 @@
+[general]
+timezone = "Asia/Shanghai"
+data_dir = "data"
+log_level = "INFO"
+
+[ai]
+provider = "claude"  # "claude" or "openai"
+anthropic_api_key = ""
+openai_api_key = ""
+# Model selection
+claude_model = "claude-sonnet-4-20250514"
+openai_model = "gpt-4o"
+dalle_model = "dall-e-3"
+# Generation settings
+max_tokens = 2000
+temperature = 0.7
+
+[database]
+path = "data/content_pilot.db"
+
+[browser]
+headless = false
+timeout = 60000  # ms
+stealth = true
+user_data_dir = "data/browser_contexts"
+
+[safety]
+require_review = true
+max_posts_per_day = 3
+min_interval_minutes = 60
+# Banned words file (one per line, optional)
+banned_words_file = ""
+
+[platforms]
+enabled = ["xiaohongshu", "douyin", "bilibili", "weibo"]
+
+[platforms.xiaohongshu]
+creator_url = "https://creator.xiaohongshu.com"
+best_hours = [7, 8, 9, 12, 13, 19, 20, 21, 22]
+max_title_length = 20
+max_content_length = 1000
+max_tags = 10
+max_images = 9
+
+[platforms.douyin]
+creator_url = "https://creator.douyin.com"
+best_hours = [12, 13, 18, 19, 20, 21, 22, 23]
+max_title_length = 55
+max_description_length = 4000
+max_tags = 5
+
+[platforms.bilibili]
+creator_url = "https://member.bilibili.com"
+best_hours = [11, 12, 13, 17, 18, 19, 21, 22, 23]
+max_title_length = 80
+max_description_length = 2000
+max_tags = 12
+
+[platforms.weibo]
+creator_url = "https://weibo.com"
+best_hours = [8, 9, 12, 13, 18, 19, 20, 21, 22]
+max_content_length = 2000
+max_images = 9
+max_tags = 5
+
+[scheduler]
+job_store = "sqlite"
+coalesce = true
+max_instances = 1
+misfire_grace_time = 3600  # seconds

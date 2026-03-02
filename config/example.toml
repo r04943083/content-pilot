@@ -1,0 +1,14 @@
+# User configuration example
+# Copy this to ~/.content-pilot/config.toml and customize
+# Values here override config/default.toml
+
+[ai]
+provider = "claude"
+# anthropic_api_key = "sk-ant-..."  # Or set CP_AI__ANTHROPIC_API_KEY env var
+
+[safety]
+require_review = true
+max_posts_per_day = 3
+
+[platforms]
+enabled = ["xiaohongshu"]  # Start with one platform

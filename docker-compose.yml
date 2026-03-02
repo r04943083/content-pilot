@@ -1,0 +1,11 @@
+services:
+  content-pilot:
+    build: .
+    container_name: content-pilot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+    command: content-pilot run
