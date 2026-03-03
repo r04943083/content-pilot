@@ -11,13 +11,10 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from content_pilot.constants import PLATFORMS, STYLES
 from content_pilot.utils.log import setup_logging
 
 console = Console()
-
-# Available platforms and styles
-PLATFORMS = ["xiaohongshu", "douyin", "bilibili", "weibo"]
-STYLES = ["tutorial", "review", "lifestyle", "knowledge", "story"]
 
 
 def run_async(coro):

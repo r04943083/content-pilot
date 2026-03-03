@@ -1,8 +1,8 @@
 """Shared constants for the GUI."""
 
-PLATFORMS = ["xiaohongshu", "douyin", "bilibili", "weibo"]
+from content_pilot.constants import PLATFORMS, STYLES
 
-STYLES = ["tutorial", "review", "lifestyle", "knowledge", "story"]
+__all__ = ["PLATFORMS", "STYLES", "STATUS_COLORS", "PLATFORM_ICONS", "PLATFORM_COLORS"]
 
 STATUS_COLORS: dict[str, str] = {
     "draft": "grey",

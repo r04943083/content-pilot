@@ -5,7 +5,11 @@ from nicegui import app, ui
 
 def nav_drawer() -> ui.left_drawer:
     """Render the left navigation drawer shared across all pages."""
-    current_path = app.storage.tab.get("__nicegui_page_path__", "/")
+    # Use try-except to handle case when client connection is not yet established
+    try:
+        current_path = app.storage.client.get("__nicegui_page_path__", "/")
+    except (AttributeError, RuntimeError):
+        current_path = "/"
 
     with ui.left_drawer(value=True).classes(
         "bg-dark text-white q-pa-none"

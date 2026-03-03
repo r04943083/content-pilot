@@ -47,74 +47,37 @@ The install script will automatically:
 > sudo playwright install-deps chromium
 > ```
 
+### Quick Start (GUI)
+
 After installation, every time you open a new terminal:
 
 ```bash
 cd content-pilot
 source .venv/bin/activate
-```
-
-Then edit `.env` to add your API key:
-
-```bash
-nano .env
-# Default provider is Qwen (千问):
-# CP_AI__QWEN_API_KEY=sk-...
-#
-# Or use GLM (智谱):
-# CP_AI__PROVIDER=glm
-# CP_AI__GLM_API_KEY=...
-#
-# Or OpenAI / Claude:
-# CP_AI__PROVIDER=openai   CP_AI__OPENAI_API_KEY=sk-...
-# CP_AI__PROVIDER=claude   CP_AI__ANTHROPIC_API_KEY=sk-ant-...
-```
-
-### Quick Start
-
-```bash
-# Step 1 — Login (opens browser, scan QR code with your phone)
-content-pilot login --platform xiaohongshu
-
-# Step 2 — Generate content (AI writes a draft, you review it)
-#   You'll be prompted to: approve / edit / regenerate / cancel
-#   Approved drafts are saved to the local database (not published yet)
-content-pilot generate --topic "Python learning tips" --platform xiaohongshu --style tutorial
-
-# Step 3 — Preview before publishing (--dry-run = no actual publish)
-content-pilot publish --content-id 1 --dry-run
-
-# Step 4 — Publish for real
-content-pilot publish --content-id 1
-
-# Step 5 — Check analytics after publishing
-content-pilot analytics summary
-
-# Step 6 (optional) — Set up scheduled auto-generation + publishing
-content-pilot schedule add --name "Daily Post" --platform xiaohongshu \
-  --topic "Python Tips" --cron "0 20 * * *"
-content-pilot run   # start the scheduling daemon
-
-# Or use the Web GUI for a visual interface
 content-pilot gui
 ```
 
-> **Workflow**: `login` → `generate` (AI draft) → `approve` → `publish` (post to platform).
-> Generate only creates a local draft. You must run `publish` to actually post it.
+Then open http://127.0.0.1:8080 in your browser.
 
-### CLI Reference
+#### Step-by-Step Workflow
 
-| Command | Description |
-|---------|-------------|
-| `login --platform <name\|all>` | Login via QR code |
-| `status` | Show all account statuses |
-| `generate --topic <t> --platform <p> --style <s>` | Generate AI content |
-| `publish --content-id <id> [--dry-run]` | Publish content |
-| `schedule add\|list\|remove\|pause\|resume` | Manage schedules |
-| `analytics summary\|growth\|post\|export` | View analytics |
-| `config show\|validate` | Configuration management |
-| `run` | Start scheduling daemon |
-| `gui` | Launch web GUI (default: http://127.0.0.1:8080) |
+1. **Configure API Key** — Go to **Settings** page, select your AI provider and enter the API key
+2. **Login to Platforms** — Go to **Accounts** page, click login button for each platform and scan QR code with your phone
+3. **Generate Content** — Go to **Content** page, enter a topic, select platform and style, click **Generate**
+4. **Review & Edit** — Preview the AI-generated content, edit if needed, then approve
+5. **Publish** — Go to **Publish** page, select approved drafts and click **Publish**
+6. **Schedule (Optional)** — Go to **Schedule** page to set up automated daily posting
+
+### GUI Pages Overview
+
+| Page | Description |
+|------|-------------|
+| **Dashboard** | Overview of accounts and recent posts |
+| **Accounts** | Scan QR code to login to each platform |
+| **Content** | Generate AI content, preview and edit drafts |
+| **Publish** | Manage and publish approved drafts |
+| **Schedule** | Set up automated posting schedules |
+| **Settings** | Configure AI provider and API keys |
 
 ### Content Styles
 
@@ -126,6 +89,15 @@ content-pilot gui
 | `knowledge` | Knowledge/educational |
 | `story` | Narrative storytelling |
 
+### Best Posting Times
+
+| Platform | Recommended Times |
+|----------|-------------------|
+| Xiaohongshu | 7-9am, 12-1pm, 7-10pm |
+| Douyin | 12-1pm, 6-8pm, 9-11pm |
+| Bilibili | 11am-1pm, 5-7pm, 9-11pm |
+| Weibo | 8-9am, 12-1pm, 6-10pm |
+
 ### Configuration
 
 Configuration uses three layers (later overrides earlier):
@@ -134,19 +106,19 @@ Configuration uses three layers (later overrides earlier):
 2. `~/.content-pilot/config.toml` - User settings
 3. Environment variables with `CP_` prefix (e.g., `CP_AI__PROVIDER=openai`)
 
-### Architecture
+You can configure everything via the **Settings** page in the GUI, or manually edit `.env`:
 
-```
-CLI (Click) / Web GUI (NiceGUI)
-         ↓
-  App Orchestrator → Platform Connectors (Playwright)
-         ↓                        ↓
-  Content Generator          Browser Manager
-  (Qwen/GLM/OpenAI/Claude)  (Stealth + Sessions)
-         ↓                        ↓
-  Scheduler (APScheduler)    SQLite Database
-         ↓
-  Safety (Rate Limiter + Validator)
+```bash
+# Default provider is Qwen (千问):
+CP_AI__QWEN_API_KEY=sk-...
+
+# Or use GLM (智谱):
+CP_AI__PROVIDER=glm
+CP_AI__GLM_API_KEY=...
+
+# Or OpenAI / Claude:
+CP_AI__PROVIDER=openai   CP_AI__OPENAI_API_KEY=sk-...
+CP_AI__PROVIDER=claude   CP_AI__ANTHROPIC_API_KEY=sk-ant-...
 ```
 
 ---
@@ -192,60 +164,37 @@ bash install.sh
 > sudo playwright install-deps chromium
 > ```
 
+### 快速上手（GUI）
+
 安装完成后，每次打开新终端需要先激活环境：
 
 ```bash
 cd content-pilot
 source .venv/bin/activate
-```
-
-然后编辑 `.env` 填入 API Key：
-
-```bash
-nano .env
-# 默认使用千问 (Qwen):
-# CP_AI__QWEN_API_KEY=sk-...
-#
-# 或使用智谱 GLM:
-# CP_AI__PROVIDER=glm
-# CP_AI__GLM_API_KEY=...
-#
-# 或使用 OpenAI / Claude:
-# CP_AI__PROVIDER=openai   CP_AI__OPENAI_API_KEY=sk-...
-# CP_AI__PROVIDER=claude   CP_AI__ANTHROPIC_API_KEY=sk-ant-...
-```
-
-### 快速上手
-
-```bash
-# 第一步 — 登录平台（打开浏览器，用手机扫码）
-content-pilot login --platform xiaohongshu
-
-# 第二步 — 生成内容（AI 写草稿，你来审核）
-#   会提示你选择: approve(通过) / edit(编辑) / regenerate(重写) / cancel(取消)
-#   通过后草稿保存在本地数据库，还没有发布！
-content-pilot generate --topic "Python学习技巧" --platform xiaohongshu --style tutorial
-
-# 第三步 — 发布前预览（--dry-run 只看不发）
-content-pilot publish --content-id 1 --dry-run
-
-# 第四步 — 正式发布到平台
-content-pilot publish --content-id 1
-
-# 第五步 — 发布后查看数据
-content-pilot analytics summary
-
-# 第六步（可选）— 设置定时自动生成+发布
-content-pilot schedule add --name "每日发帖" --platform xiaohongshu \
-  --topic "Python技巧" --cron "0 20 * * *"
-content-pilot run   # 启动定时守护进程
-
-# 或者使用可视化界面
 content-pilot gui
 ```
 
-> **完整流程**：`login`(登录) → `generate`(AI生成草稿) → `approve`(审核通过) → `publish`(发布到平台)
-> generate 只是在本地生成草稿，必须执行 publish 才会真正发布到平台。
+然后在浏览器中打开 http://127.0.0.1:8080
+
+#### 操作流程
+
+1. **配置 API Key** — 进入 **Settings** 页面，选择 AI 提供商并输入 API Key
+2. **登录平台** — 进入 **Accounts** 页面，点击各平台的登录按钮，用手机扫码
+3. **生成内容** — 进入 **Content** 页面，输入主题，选择平台和风格，点击 **Generate**
+4. **审核编辑** — 预览 AI 生成的内容，按需编辑，然后批准
+5. **发布** — 进入 **Publish** 页面，选择已批准的草稿，点击 **Publish**
+6. **定时任务（可选）** — 进入 **Schedule** 页面设置每日自动发帖
+
+### GUI 页面说明
+
+| 页面 | 功能 |
+|------|------|
+| **Dashboard** | 账号和最近帖子概览 |
+| **Accounts** | 各平台扫码登录 |
+| **Content** | AI 内容生成、预览和编辑 |
+| **Publish** | 管理和发布已批准的草稿 |
+| **Schedule** | 设置定时发布任务 |
+| **Settings** | 配置 AI 提供商和 API Keys |
 
 ### 内容风格
 
@@ -266,48 +215,99 @@ content-pilot gui
 | B站 | 11-13点、17-19点、21-23点 |
 | 微博 | 8-9点、12-13点、18-22点 |
 
-### Docker 部署
+### 配置
+
+配置使用三层结构（后者覆盖前者）：
+
+1. `config/default.toml` - 默认设置
+2. `~/.content-pilot/config.toml` - 用户设置
+3. 环境变量，前缀为 `CP_`（如 `CP_AI__PROVIDER=openai`）
+
+你可以在 GUI 的 **Settings** 页面配置一切，或者手动编辑 `.env`：
 
 ```bash
-# 首次使用需要先在本地登录（需要扫码）
+# 默认使用千问 (Qwen):
+CP_AI__QWEN_API_KEY=sk-...
+
+# 或使用智谱 GLM:
+CP_AI__PROVIDER=glm
+CP_AI__GLM_API_KEY=...
+
+# 或使用 OpenAI / Claude:
+CP_AI__PROVIDER=openai   CP_AI__OPENAI_API_KEY=sk-...
+CP_AI__PROVIDER=claude   CP_AI__ANTHROPIC_API_KEY=sk-ant-...
+```
+
+---
+
+## CLI Reference (Advanced)
+
+For users who prefer command-line interface:
+
+```bash
+# Login via QR code
 content-pilot login --platform xiaohongshu
 
-# 然后使用 Docker 运行守护进程
+# Check account status
+content-pilot status
+
+# Generate content
+content-pilot generate --topic "Python学习技巧" --platform xiaohongshu --style tutorial
+
+# Publish (dry-run first)
+content-pilot publish --content-id 1 --dry-run
+content-pilot publish --content-id 1
+
+# Analytics
+content-pilot analytics summary
+
+# Schedule management
+content-pilot schedule add --name "每日发帖" --platform xiaohongshu --topic "Python技巧" --cron "0 20 * * *"
+content-pilot schedule list
+content-pilot run   # start daemon
+```
+
+---
+
+## Docker Deployment
+
+```bash
+# First login locally (requires QR scan)
+content-pilot login --platform xiaohongshu
+
+# Then run daemon with Docker
 docker compose up -d
 ```
 
-### 常见问题
+---
 
-**Q: `bash install.sh` 提示权限错误？**
-安装 `python3-venv` 或 Playwright 系统依赖时需要 sudo 密码，脚本会自动提示。
+## FAQ
 
-**Q: `source .venv/bin/activate` 报错 No such file？**
-删掉旧的 `.venv` 重新运行 `bash install.sh`：
+**Q: `bash install.sh` shows permission error?**
+Installing `python3-venv` or Playwright system dependencies requires sudo password. The script will prompt automatically.
+
+**Q: `source .venv/bin/activate` reports No such file?**
+Delete the old `.venv` and run `bash install.sh` again:
 ```bash
 rm -rf .venv
 bash install.sh
 ```
 
-**Q: 登录时报错 `TargetClosedError` / `libnspr4.so` 找不到？**
-Chromium 缺少系统依赖库，手动安装：
+**Q: Login reports `TargetClosedError` / `libnspr4.so` not found?**
+Chromium is missing system dependencies. Install them:
 ```bash
-# 方法一（推荐）：
 sudo playwright install-deps chromium
-
-# 方法二（手动）：
-sudo apt install -y libnspr4 libnss3 libatk1.0-0 libatk-bridge2.0-0 \
-  libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 \
-  libgbm1 libpango-1.0-0 libcairo2 libasound2
 ```
-WSL2 用户特别容易遇到此问题，因为 WSL 默认不装 GUI 相关库。
 
-**Q: 如何切换 AI 提供商？**
-编辑 `.env`，设置 `CP_AI__PROVIDER=qwen|glm|openai|claude` 并填入对应 API Key。
-默认为 `qwen`（千问），推荐国内用户使用千问或 GLM。
+**Q: How to switch AI provider?**
+Edit `.env` and set `CP_AI__PROVIDER=qwen|glm|openai|claude` with the corresponding API key.
+Default is `qwen` (千问), recommended for users in China.
 
-### 法律声明
+---
 
-本工具仅供学习和研究用途。使用者需遵守各平台的服务条款和相关法律法规。根据中国《互联网信息服务深度合成管理规定》，AI 生成的内容应当进行标注。请在使用时遵守相关规定。
+## Legal Disclaimer
+
+This tool is for learning and research purposes only. Users must comply with the terms of service of each platform and relevant laws and regulations. According to China's "Provisions on the Administration of Deep Synthesis of Internet Information Services", AI-generated content should be labeled. Please comply with relevant regulations when using.
 
 ---
 
