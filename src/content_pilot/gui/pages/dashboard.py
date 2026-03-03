@@ -37,12 +37,18 @@ def register() -> None:
                 # Calculate statistics
                 total_accounts = len(accounts)
                 today = datetime.now().date()
-                posts_today = sum(
-                    1
-                    for p in posts
-                    if p.get("published_at")
-                    and datetime.fromisoformat(p["published_at"]).date() == today
-                )
+
+                def is_posted_today(p: dict) -> bool:
+                    """Check if post was published today."""
+                    try:
+                        pub_date = p.get("published_at")
+                        if not pub_date:
+                            return False
+                        return datetime.fromisoformat(str(pub_date)).date() == today
+                    except (ValueError, TypeError):
+                        return False
+
+                posts_today = sum(1 for p in posts if is_posted_today(p))
                 pending_review = sum(1 for p in posts if p.get("status") == "approved")
                 scheduled_tasks = sum(1 for s in schedules if s.get("enabled", 0))
 
@@ -133,15 +139,20 @@ def register() -> None:
                     # Calculate activity for last 7 days
                     dates = []
                     counts = []
+
+                    def is_created_on_date(p: dict, target_date) -> bool:
+                        try:
+                            created = p.get("created_at")
+                            if not created:
+                                return False
+                            return datetime.fromisoformat(str(created)).date() == target_date
+                        except (ValueError, TypeError):
+                            return False
+
                     for i in range(6, -1, -1):
                         date = today - timedelta(days=i)
                         dates.append(date.strftime("%m/%d"))
-                        count = sum(
-                            1
-                            for p in posts
-                            if p.get("created_at")
-                            and datetime.fromisoformat(p["created_at"]).date() == date
-                        )
+                        count = sum(1 for p in posts if is_created_on_date(p, date))
                         counts.append(count)
 
                     max_count = max(counts) if counts else 1
