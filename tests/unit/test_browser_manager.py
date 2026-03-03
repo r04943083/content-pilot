@@ -188,19 +188,40 @@ class TestSessionPersistence:
 
 class TestBrowserReuse:
     @pytest.mark.asyncio
-    async def test_closes_existing_browser_before_new(self, manager):
-        """Getting a new context closes the previous browser."""
-        old_browser = AsyncMock()
+    async def test_reuses_browser_same_headless_mode(self, manager):
+        """Browser is reused when headless mode matches."""
+        old_browser = MagicMock()
         old_browser.is_connected.return_value = True
+        old_browser.new_context = AsyncMock(return_value=AsyncMock())
         manager._browser = old_browser
+        manager._browser_headless = True  # matches default
 
         mock_pw = AsyncMock()
-        new_browser = AsyncMock()
-        new_browser.is_connected.return_value = False
-        mock_pw.chromium.launch = AsyncMock(return_value=new_browser)
-        mock_context = AsyncMock()
-        new_browser.new_context = AsyncMock(return_value=mock_context)
         manager._playwright = mock_pw
 
         await manager.get_context("xiaohongshu")
+        # Should NOT have launched a new browser
+        mock_pw.chromium.launch.assert_not_awaited()
+        # Should NOT have closed the old browser
+        old_browser.close.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_closes_browser_when_headless_mode_changes(self, manager):
+        """Browser is closed and relaunched when headless mode changes."""
+        old_browser = MagicMock()
+        old_browser.is_connected.return_value = True
+        old_browser.close = AsyncMock()
+        manager._browser = old_browser
+        manager._browser_headless = True  # currently headless
+
+        mock_pw = AsyncMock()
+        new_browser = MagicMock()
+        new_browser.is_connected.return_value = True
+        new_browser.new_context = AsyncMock(return_value=AsyncMock())
+        mock_pw.chromium.launch = AsyncMock(return_value=new_browser)
+        manager._playwright = mock_pw
+
+        # Request non-headless → mode change → should relaunch
+        await manager.get_context("xiaohongshu", headless=False)
         old_browser.close.assert_awaited_once()
+        mock_pw.chromium.launch.assert_awaited_once()

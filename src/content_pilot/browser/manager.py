@@ -42,6 +42,7 @@ class BrowserManager:
     def __init__(self) -> None:
         self._playwright: Playwright | None = None
         self._browser = None
+        self._browser_headless: bool | None = None  # track current browser mode
         self._settings = get_settings()
 
     async def start(self) -> None:
@@ -51,6 +52,7 @@ class BrowserManager:
         if self._browser:
             await self._browser.close()
             self._browser = None
+            self._browser_headless = None
         if self._playwright:
             await self._playwright.stop()
             self._playwright = None
@@ -71,16 +73,27 @@ class BrowserManager:
         if headless is None:
             headless = self._settings.browser.headless
 
-        if self._browser and self._browser.is_connected():
-            await self._browser.close()
-
-        self._browser = await self._playwright.chromium.launch(
-            headless=headless,
-            args=[
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-            ],
+        # Reuse existing browser if it's connected and headless mode matches.
+        # Closing and relaunching destroys in-process state (TLS sessions,
+        # connection pools) that platforms like Xiaohongshu rely on for
+        # session continuity after login.
+        need_new_browser = (
+            not self._browser
+            or not self._browser.is_connected()
+            or self._browser_headless != headless
         )
+
+        if need_new_browser:
+            if self._browser and self._browser.is_connected():
+                await self._browser.close()
+            self._browser = await self._playwright.chromium.launch(
+                headless=headless,
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--no-sandbox",
+                ],
+            )
+            self._browser_headless = headless
 
         state_path = self._state_path(platform)
         storage_state = str(state_path) if state_path.exists() else None
