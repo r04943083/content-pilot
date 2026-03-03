@@ -8,6 +8,7 @@ __all__ = [
     "STATUS_COLORS",
     "PLATFORM_ICONS",
     "PLATFORM_COLORS",
+    "PLATFORM_DISPLAY_NAMES",
     "COLORS",
     "SPACING",
 ]
@@ -65,4 +66,11 @@ PLATFORM_COLORS: dict[str, str] = {
     "douyin": "#010101",
     "bilibili": "#00A1D6",
     "weibo": "#E6162D",
+}
+
+PLATFORM_DISPLAY_NAMES: dict[str, str] = {
+    "xiaohongshu": "小红书",
+    "douyin": "抖音",
+    "bilibili": "哔哩哔哩",
+    "weibo": "微博",
 }

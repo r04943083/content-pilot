@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from nicegui import ui
 
-from content_pilot.gui.constants import COLORS, PLATFORM_COLORS, PLATFORM_ICONS
+from content_pilot.gui.constants import COLORS, PLATFORM_COLORS, PLATFORM_DISPLAY_NAMES, PLATFORM_ICONS
 
 
 def account_card(account: dict) -> ui.card:
@@ -47,7 +47,9 @@ def account_card(account: dict) -> ui.card:
                 )
 
             with ui.column().classes("q-gutter-xs"):
-                name = account.get("nickname") or account.get("username", platform)
+                nickname = account.get("nickname") or account.get("username", platform)
+                display_platform = PLATFORM_DISPLAY_NAMES.get(platform, platform.capitalize())
+                name = f"{display_platform} · {nickname}"
                 ui.label(name).classes(
                     "text-subtitle1 text-weight-bold"
                 ).style(f"color: {COLORS['text_primary']};")

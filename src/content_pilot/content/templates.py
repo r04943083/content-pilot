@@ -86,21 +86,43 @@ def _load_toml_prompts(platform: str) -> dict | None:
     return None
 
 
-def get_prompt(platform: str, style: str, topic: str) -> str:
-    """Build the full prompt for content generation."""
+def get_prompt(platform: str, style: str, topic: str, word_count: str | None = None) -> str:
+    """Build the full prompt for content generation.
+
+    Args:
+        platform: Target platform
+        style: Content style
+        topic: Content topic
+        word_count: Optional word count key (short/standard/long) to override platform defaults
+    """
     # Try TOML file first
     toml_data = _load_toml_prompts(platform)
     if toml_data:
         system = toml_data.get("system", "")
         template = toml_data.get("styles", {}).get(style, "")
         if template:
-            return f"{system}\n\n{template.format(topic=topic)}{_OUTPUT_FORMAT}"
+            prompt = f"{system}\n\n{template.format(topic=topic)}{_OUTPUT_FORMAT}"
+            return _append_word_count(prompt, word_count)
 
     # Fall back to built-in
     builtin = _BUILTIN.get(platform)
     if not builtin:
-        return f"Write social media content about: {topic}{_OUTPUT_FORMAT}"
+        prompt = f"Write social media content about: {topic}{_OUTPUT_FORMAT}"
+        return _append_word_count(prompt, word_count)
 
     system = builtin["system"]
     template = builtin["styles"].get(style, builtin["styles"]["tutorial"])
-    return f"{system}\n\n{template.format(topic=topic)}{_OUTPUT_FORMAT}"
+    prompt = f"{system}\n\n{template.format(topic=topic)}{_OUTPUT_FORMAT}"
+    return _append_word_count(prompt, word_count)
+
+
+def _append_word_count(prompt: str, word_count: str | None) -> str:
+    """Append word count instruction to prompt if specified."""
+    if not word_count:
+        return prompt
+
+    from content_pilot.constants import WORD_COUNT_OPTIONS
+    option = WORD_COUNT_OPTIONS.get(word_count)
+    if option:
+        prompt += f"\n内容长度要求：{option['range']}字"
+    return prompt

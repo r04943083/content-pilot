@@ -36,6 +36,7 @@ class CardGenerator:
         summary: str,
         tags: list[str],
         style: str = "quote",
+        page_label: str | None = None,
     ) -> bytes | None:
         """
         Generate a card image.
@@ -49,6 +50,7 @@ class CardGenerator:
             summary: Card summary/content
             tags: List of tags
             style: Card style (quote, title, list, minimal)
+            page_label: Optional page label for multi-card series (e.g. "1/4")
 
         Returns:
             PNG image bytes or None on failure
@@ -58,7 +60,7 @@ class CardGenerator:
             style = "quote"
 
         # Step 1: Generate HTML via AI
-        html_content = await self._generate_html(title, summary, tags, style)
+        html_content = await self._generate_html(title, summary, tags, style, page_label)
 
         if not html_content:
             logger.warning("AI HTML generation failed, using fallback template")
@@ -73,10 +75,11 @@ class CardGenerator:
         summary: str,
         tags: list[str],
         style: str,
+        page_label: str | None = None,
     ) -> str | None:
         """Call AI to generate HTML/CSS code."""
         try:
-            prompt = get_card_prompt(title, summary, tags, style)
+            prompt = get_card_prompt(title, summary, tags, style, page_label=page_label)
             raw = await self._call_ai(prompt)
 
             if not raw:

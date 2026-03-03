@@ -9,7 +9,9 @@ from typing import TYPE_CHECKING
 
 from nicegui import ui
 
+from content_pilot.constants import WORD_COUNT_OPTIONS
 from content_pilot.content.card_templates import CARD_STYLES, DEFAULT_STYLE_MAP
+from content_pilot.gui.components.image_lightbox import clickable_image
 from content_pilot.gui.components.image_picker import search_unsplash
 from content_pilot.gui.components.nav import page_layout, set_active_nav
 from content_pilot.gui.constants import COLORS, PLATFORMS, STYLES
@@ -117,6 +119,17 @@ def register() -> None:
                         STYLES,
                         value="tutorial",
                         label=t("content.style"),
+                    ).classes("full-width q-mb-sm").props("outlined")
+
+                    # Word count select
+                    word_count_options = {
+                        k: t(f"content.word_count_{k}")
+                        for k in WORD_COUNT_OPTIONS
+                    }
+                    word_count_select = ui.select(
+                        word_count_options,
+                        value="standard",
+                        label=t("content.word_count"),
                     ).classes("full-width q-mb-md").props("outlined")
 
                     # Auto-generate images section
@@ -154,6 +167,7 @@ def register() -> None:
 
                         platform = platform_select.value
                         style = style_select.value
+                        word_count = word_count_select.value
                         auto_generate = auto_generate_checkbox.value
                         img_count = image_count_select.value
 
@@ -168,6 +182,7 @@ def register() -> None:
                                 style,
                                 auto_generate_images=auto_generate,
                                 image_count=img_count,
+                                word_count=word_count,
                             )
 
                             generated["post_id"] = post_id
@@ -516,9 +531,7 @@ def register() -> None:
                                                 with ui.card().classes("q-pa-xs").style(
                                                     "border-radius: 8px; cursor: pointer;"
                                                 ).on("click", lambda url=img_url: _add_web_image(url)):
-                                                    ui.image(img_url).classes(
-                                                        "w-20 h-20 object-cover"
-                                                    ).style("border-radius: 6px;")
+                                                    clickable_image(img_url, classes="w-20 h-20 object-cover", style="border-radius: 6px;")
 
                                     ui.notify(t("content.found_images", count=len(results)), type="positive")
 
@@ -560,9 +573,7 @@ def register() -> None:
                                     with ui.card().classes("q-pa-xs").style(
                                         "border-radius: 8px;"
                                     ):
-                                        ui.image(img_path).classes(
-                                            "w-20 h-20 object-cover"
-                                        ).style("border-radius: 6px;")
+                                        clickable_image(img_path, classes="w-20 h-20 object-cover", style="border-radius: 6px;")
 
                                         def make_remove(path=img_path):
                                             return lambda: _remove_image(path)

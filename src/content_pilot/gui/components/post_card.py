@@ -7,6 +7,7 @@ from typing import Callable
 
 from nicegui import ui
 
+from content_pilot.gui.components.image_lightbox import clickable_image
 from content_pilot.gui.constants import PLATFORM_COLORS, PLATFORM_ICONS, STATUS_COLORS, COLORS
 from content_pilot.gui.i18n import t
 
@@ -27,9 +28,7 @@ def post_card(
         # Thumbnail area
         images = json.loads(post.get("images", "[]"))
         if images:
-            ui.image(images[0]).classes("q-mb-sm").style(
-                "width: 100%; height: 180px; object-fit: cover; border-radius: 6px;"
-            )
+            clickable_image(images[0], classes="q-mb-sm", style="width: 100%; height: 180px; object-fit: cover; border-radius: 6px;")
         else:
             # Placeholder for posts without images
             with ui.row().classes(
@@ -104,7 +103,7 @@ def post_card(
                     icon="publish",
                     on_click=lambda _, pid=post["id"]: on_publish(pid),
                 ).props(f"color={COLORS['primary']} dense")
-            if on_delete and post["status"] in ("draft", "failed"):
+            if on_delete and post["status"] in ("draft", "approved", "failed"):
                 ui.button(
                     t("common.delete"),
                     icon="delete",

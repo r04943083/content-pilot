@@ -121,18 +121,102 @@ def get_card_prompt(
     summary: str,
     tags: list[str],
     style: str = "quote",
+    page_label: str | None = None,
 ) -> str:
-    """Generate the AI prompt for card generation."""
+    """Generate the AI prompt for card generation.
+
+    Args:
+        title: Card title
+        summary: Card summary/content
+        tags: List of tags
+        style: Card style key
+        page_label: Optional page label like "1/4" for multi-card series
+    """
     style_info = CARD_STYLES.get(style, CARD_STYLES["quote"])
     tags_str = ", ".join(f"#{t}" for t in tags) if tags else "无"
 
-    return CARD_PROMPT.format(
+    prompt = CARD_PROMPT.format(
         title=title,
         summary=summary[:300] if len(summary) > 300 else summary,
         tags=tags_str,
         style_name=style_info["name"],
         style_description=style_info["description"],
     )
+
+    if page_label:
+        prompt += f"\n这是系列图第 {page_label} 张，请在卡片标注页码。"
+
+    return prompt
+
+
+def split_content_for_cards(
+    title: str,
+    content: str,
+    tags: list[str],
+    card_count: int,
+) -> list[dict]:
+    """Split content across multiple cards so each card has different content.
+
+    Args:
+        title: Original content title
+        content: Full content text
+        tags: List of tags
+        card_count: Number of cards to generate
+
+    Returns:
+        List of dicts with keys: title, summary, tags, page_label
+    """
+    if card_count <= 1:
+        return [{"title": title, "summary": content[:300], "tags": tags, "page_label": None}]
+
+    paragraphs = [p.strip() for p in content.split("\n") if p.strip()]
+
+    cards: list[dict] = []
+
+    # Card 1: title + opening summary
+    opening = "\n".join(paragraphs[:max(1, len(paragraphs) // card_count)])
+    cards.append({
+        "title": title,
+        "summary": opening[:300],
+        "tags": [],
+        "page_label": f"1/{card_count}",
+    })
+
+    # Middle cards: distribute remaining paragraphs evenly
+    remaining = paragraphs[max(1, len(paragraphs) // card_count):]
+    middle_count = card_count - 2  # exclude first and last
+
+    if middle_count > 0 and remaining:
+        chunk_size = max(1, len(remaining) // (middle_count + 1))
+        for i in range(middle_count):
+            start = i * chunk_size
+            end = start + chunk_size
+            chunk = "\n".join(remaining[start:end])
+            cards.append({
+                "title": title,
+                "summary": chunk[:300] if chunk else content[:300],
+                "tags": [],
+                "page_label": f"{i + 2}/{card_count}",
+            })
+        # Last card: remaining paragraphs + tags as CTA
+        last_chunk = "\n".join(remaining[middle_count * chunk_size:])
+        cards.append({
+            "title": title,
+            "summary": last_chunk[:300] if last_chunk else content[-300:],
+            "tags": tags,
+            "page_label": f"{card_count}/{card_count}",
+        })
+    else:
+        # Only 2 cards total: second card gets the rest + tags
+        rest = "\n".join(remaining) if remaining else content[-300:]
+        cards.append({
+            "title": title,
+            "summary": rest[:300],
+            "tags": tags,
+            "page_label": f"2/{card_count}",
+        })
+
+    return cards
 
 
 def get_fallback_html(

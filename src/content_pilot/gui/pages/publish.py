@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from nicegui import ui
 
+from content_pilot.gui.components.image_lightbox import clickable_image
 from content_pilot.gui.components.nav import page_layout, set_active_nav
 from content_pilot.gui.constants import PLATFORMS, COLORS, STATUS_COLORS, PLATFORM_ICONS, PLATFORM_COLORS
 from content_pilot.gui.i18n import t
@@ -136,9 +137,7 @@ def register() -> None:
 
                 images = json.loads(post.get("images") or "[]")
                 if images:
-                    ui.image(images[0]).classes("q-my-md").style(
-                        "width: 100%; border-radius: 8px;"
-                    )
+                    clickable_image(images[0], classes="q-my-md", style="width: 100%; border-radius: 8px;")
 
                 ui.separator().props("dark")
 
@@ -175,6 +174,15 @@ def register() -> None:
                             icon="publish",
                             on_click=lambda: _publish_and_close(post["id"], dialog)
                         ).props(f"color={COLORS['primary']}")
+                    if post.get("status") in ("draft", "approved", "failed"):
+                        async def _delete_and_close(pid=post["id"], dlg=dialog):
+                            dlg.close()
+                            await do_delete(pid)
+                        ui.button(
+                            t("common.delete"),
+                            icon="delete",
+                            on_click=_delete_and_close,
+                        ).props(f"color={COLORS['warning']} outline")
                     ui.button(
                         t("common.close"),
                         on_click=dialog.close
@@ -312,9 +320,7 @@ def register() -> None:
                                     with ui.row().classes("items-center q-gutter-sm"):
                                         images = json.loads(post.get("images") or "[]")
                                         if images:
-                                            ui.image(images[0]).classes("q-ml-sm").style(
-                                                "width: 48px; height: 48px; border-radius: 6px; object-fit: cover;"
-                                            )
+                                            clickable_image(images[0], classes="q-ml-sm", style="width: 48px; height: 48px; border-radius: 6px; object-fit: cover;")
                                         else:
                                             ui.icon("article", size="sm").classes("text-grey q-ml-sm")
 
@@ -430,9 +436,7 @@ def selectable_post_card(
 
             images = json.loads(post.get("images") or "[]")
             if images:
-                ui.image(images[0]).classes("q-mb-sm").style(
-                    "width: 100%; height: 180px; object-fit: cover; border-radius: 6px;"
-                )
+                clickable_image(images[0], classes="q-mb-sm", style="width: 100%; height: 180px; object-fit: cover; border-radius: 6px;")
             else:
                 with ui.row().classes("q-mb-sm items-center justify-center").style(
                     f"width: 100%; height: 120px; background: {COLORS['background']}; border-radius: 6px;"
@@ -487,7 +491,7 @@ def selectable_post_card(
                         icon="publish",
                         on_click=lambda _, pid=post["id"]: on_publish(pid),
                     ).props(f"color={COLORS['primary']} dense")
-                if on_delete and post["status"] in ("draft", "failed"):
+                if on_delete and post["status"] in ("draft", "approved", "failed"):
                     ui.button(
                         t("common.delete"),
                         icon="delete",

@@ -50,10 +50,11 @@ class ContentGenerator:
         topic: str,
         platform: str,
         style: str = "tutorial",
+        word_count: str | None = None,
     ) -> GeneratedContent:
         """Generate content for the given topic, platform, and style."""
         self._check_api_key()
-        prompt = get_prompt(platform, style, topic)
+        prompt = get_prompt(platform, style, topic, word_count=word_count)
         provider = self._settings.ai.provider
 
         if provider == "claude":
@@ -167,6 +168,7 @@ class ContentGenerator:
         tags: list[str],
         style: str = "auto",
         platform: str | None = None,
+        page_label: str | None = None,
     ) -> bytes | None:
         """
         Generate a card image using AI-written HTML/CSS rendered via Playwright.
@@ -195,6 +197,7 @@ class ContentGenerator:
             summary=summary,
             tags=tags,
             style=style,
+            page_label=page_label,
         )
 
     def _parse_response(

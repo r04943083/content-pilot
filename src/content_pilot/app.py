@@ -12,7 +12,7 @@ from content_pilot.analytics import AnalyticsCollector
 from content_pilot.browser import BrowserManager
 from content_pilot.config import get_settings
 from content_pilot.content import ContentGenerator, GeneratedContent
-from content_pilot.content.card_templates import DEFAULT_STYLE_MAP
+from content_pilot.content.card_templates import DEFAULT_STYLE_MAP, split_content_for_cards
 from content_pilot.database import Database
 from content_pilot.platforms import PlatformRegistry
 from content_pilot.platforms.base import PostContent
@@ -111,6 +111,7 @@ class App:
         style: str = "tutorial",
         auto_generate_images: bool = False,
         image_count: int = 1,
+        word_count: str | None = None,
     ) -> tuple[int, GeneratedContent, list[str]]:
         """Generate content and optionally auto-generate images.
 
@@ -120,11 +121,12 @@ class App:
             style: Content style
             auto_generate_images: Whether to auto-generate images
             image_count: Number of images to generate (1-4)
+            word_count: Optional word count key (short/standard/long)
 
         Returns:
             Tuple of (post_id, generated_content, image_paths)
         """
-        content = await self.generator.generate(topic, platform, style)
+        content = await self.generator.generate(topic, platform, style, word_count=word_count)
 
         # Validate
         result = self.validator.validate(
@@ -141,23 +143,31 @@ class App:
         image_paths: list[str] = []
         if auto_generate_images:
             try:
+                import uuid
+
                 # Get platform-specific card style
                 card_style = DEFAULT_STYLE_MAP.get(platform, "quote")
 
-                for i in range(image_count):
+                # Split content across cards for variety
+                card_data = split_content_for_cards(
+                    title=content.title,
+                    content=content.content,
+                    tags=content.tags,
+                    card_count=image_count,
+                )
+
+                for i, card_info in enumerate(card_data):
                     # Use code-generated cards instead of DALL-E
                     img_bytes = await self.generator.generate_image_from_code(
-                        title=content.title,
-                        summary=content.content[:300],  # Use first 300 chars as summary
-                        tags=content.tags,
+                        title=card_info["title"],
+                        summary=card_info["summary"],
+                        tags=card_info["tags"],
                         style=card_style,
                         platform=platform,
+                        page_label=card_info["page_label"],
                     )
                     if img_bytes:
                         # Save to data/images/
-                        import uuid
-                        from pathlib import Path
-
                         images_dir = Path(self.settings.general.data_dir) / "images"
                         images_dir.mkdir(parents=True, exist_ok=True)
                         fname = f"card_{uuid.uuid4().hex[:8]}_{i}.png"

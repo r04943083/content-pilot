@@ -10,6 +10,7 @@ from content_pilot.gui.components.nav import page_layout, set_active_nav
 from content_pilot.gui.constants import (
     COLORS,
     PLATFORM_COLORS,
+    PLATFORM_DISPLAY_NAMES,
     PLATFORM_ICONS,
     PLATFORMS,
 )
@@ -97,7 +98,8 @@ def _render_platform_card(
 
                 with ui.column().classes("q-gutter-xs"):
                     # Platform name
-                    ui.label(platform.capitalize()).classes(
+                    display_name = PLATFORM_DISPLAY_NAMES.get(platform, platform.capitalize())
+                    ui.label(display_name).classes(
                         "text-h5 text-weight-bold"
                     ).style(f"color: {COLORS['text_primary']};")
 

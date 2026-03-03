@@ -105,6 +105,10 @@ TRANSLATIONS = {
         "enter_search_query": "请输入搜索关键词",
         "no_results": "未找到结果",
         "search_error": "搜索错误",
+        "word_count": "内容长度",
+        "word_count_short": "短文 (200-400字)",
+        "word_count_standard": "标准 (500-800字)",
+        "word_count_long": "长文 (800-1200字)",
     },
     "publish": {
         "title": "发布管理",
@@ -201,6 +205,7 @@ TRANSLATIONS = {
         "error_generic": "错误：{error}",
         "add": "添加",
         "untitled": "无标题",
+        "click_to_enlarge": "点击查看大图",
     },
     "status": {
         "draft": "草稿",

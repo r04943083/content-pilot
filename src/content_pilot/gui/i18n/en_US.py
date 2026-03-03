@@ -103,6 +103,10 @@ TRANSLATIONS = {
         "enter_search_query": "Please enter a search query",
         "no_results": "No results found",
         "search_error": "Search error",
+        "word_count": "Word Count",
+        "word_count_short": "Short (200-400)",
+        "word_count_standard": "Standard (500-800)",
+        "word_count_long": "Long (800-1200)",
     },
     "publish": {
         "title": "Publish Management",
@@ -199,6 +203,7 @@ TRANSLATIONS = {
         "error_generic": "Error: {error}",
         "add": "Add",
         "untitled": "Untitled",
+        "click_to_enlarge": "Click to enlarge",
     },
     "status": {
         "draft": "Draft",
