@@ -135,7 +135,7 @@ class TestPublishFlow:
 
     @pytest.mark.asyncio
     async def test_publish_session_expired(self, app, monkeypatch):
-        """Session expired results in 'failed' status."""
+        """Session expired results in 'failed' status when re-login also fails."""
         await app.db.connect()
         try:
             post_id = await app.db.create_post(
@@ -157,6 +157,9 @@ class TestPublishFlow:
             mock_connector = AsyncMock()
             mock_connector.check_session.return_value = False
 
+            # Mock login to also fail (re-login attempt)
+            monkeypatch.setattr(app, "login", AsyncMock(return_value=False))
+
             with patch("content_pilot.app.PlatformRegistry") as mock_registry:
                 mock_registry.create.return_value = mock_connector
                 result = await app.publish(post_id)
@@ -164,7 +167,7 @@ class TestPublishFlow:
             assert result is False
             post = await app.db.get_post(post_id)
             assert post["status"] == "failed"
-            assert "Session expired" in post["error_message"]
+            assert "re-login failed" in post["error_message"]
         finally:
             await app.db.close()
 

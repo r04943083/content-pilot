@@ -429,20 +429,20 @@ def selectable_post_card(
     ) as card:
         card.post_id = post["id"]
 
-        with ui.row().classes("items-center q-gutter-sm q-mb-sm"):
-            card.checkbox = ui.checkbox().props("dense").on_value_change(
-                lambda e, pid=post["id"]: on_select(pid, e.value)
-            )
+        card.checkbox = ui.checkbox().props("dense").on_value_change(
+            lambda e, pid=post["id"]: on_select(pid, e.value)
+        )
 
-            images = json.loads(post.get("images") or "[]")
-            if images:
-                clickable_image(images[0], classes="q-mb-sm", style="width: 100%; height: 180px; object-fit: cover; border-radius: 6px;")
-            else:
-                with ui.row().classes("q-mb-sm items-center justify-center").style(
-                    f"width: 100%; height: 120px; background: {COLORS['background']}; border-radius: 6px;"
-                ):
-                    ui.icon("article", size="lg").style(f"color: {COLORS['text_secondary']}")
+        images = json.loads(post.get("images") or "[]")
+        if images:
+            clickable_image(images[0], classes="q-mb-sm", style="width: 100%; height: 180px; object-fit: cover; border-radius: 6px;")
+        else:
+            with ui.row().classes("q-mb-sm items-center justify-center").style(
+                f"width: 100%; height: 120px; background: {COLORS['background']}; border-radius: 6px;"
+            ):
+                ui.icon("article", size="lg").style(f"color: {COLORS['text_secondary']}")
 
+        with ui.column().classes("q-gutter-sm"):
             with ui.row().classes("items-center q-gutter-sm"):
                 icon = PLATFORM_ICONS.get(platform, "article")
                 ui.icon(icon, size="xs").style(f"color: {p_color};")

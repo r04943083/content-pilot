@@ -533,7 +533,7 @@ def register() -> None:
                                                 with ui.card().classes("q-pa-xs").style(
                                                     "border-radius: 8px; cursor: pointer;"
                                                 ).on("click", lambda url=img_url: _add_web_image(url)):
-                                                    clickable_image(img_url, classes="w-20 h-20 object-cover", style="border-radius: 6px;")
+                                                    clickable_image(img_url, style="width: 120px; height: 150px; object-fit: cover; border-radius: 6px;")
 
                                     ui.notify(t("content.found_images", count=len(results)), type="positive")
 
@@ -575,7 +575,7 @@ def register() -> None:
                                     with ui.card().classes("q-pa-xs").style(
                                         "border-radius: 8px;"
                                     ):
-                                        clickable_image(img_path, classes="w-20 h-20 object-cover", style="border-radius: 6px;")
+                                        clickable_image(img_path, style="width: 120px; height: 150px; object-fit: cover; border-radius: 6px;")
 
                                         def make_remove(path=img_path):
                                             return lambda: _remove_image(path)

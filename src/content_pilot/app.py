@@ -158,11 +158,11 @@ class App:
                 )
 
                 for i, card_info in enumerate(card_data):
-                    # Rotate styles: first card uses platform default, rest cycle through others
-                    if i == 0:
-                        card_style = base_style
+                    # First card always uses "title" style for cover; rest rotate
+                    if card_info.get("is_cover"):
+                        card_style = "title"
                     else:
-                        remaining = [s for s in all_styles if s != base_style]
+                        remaining = [s for s in all_styles if s != "title"]
                         card_style = remaining[(i - 1) % len(remaining)]
 
                     # Use code-generated cards instead of DALL-E
@@ -174,6 +174,7 @@ class App:
                         platform=platform,
                         page_label=card_info["page_label"],
                         color_index=i,
+                        is_cover=card_info.get("is_cover", False),
                     )
                     if img_bytes:
                         # Save to data/images/
@@ -227,13 +228,30 @@ class App:
         try:
             connector = PlatformRegistry.create(platform, context)
 
-            # Check session
+            # Check session — retry login once if expired
             if not await connector.check_session():
-                logger.error("Session expired for %s. Please login again.", platform)
-                await self.db.update_post(
-                    post_id, status="failed", error_message="Session expired"
-                )
-                return False
+                logger.warning("Session expired for %s, attempting re-login...", platform)
+                await context.close()
+
+                # Re-login with visible browser
+                login_ok = await self.login(platform)
+                if not login_ok:
+                    logger.error("Re-login failed for %s.", platform)
+                    await self.db.update_post(
+                        post_id, status="failed", error_message="Session expired, re-login failed"
+                    )
+                    return False
+
+                # Get fresh context after login
+                context = await self.browser.get_context(platform)
+                connector = PlatformRegistry.create(platform, context)
+
+                if not await connector.check_session():
+                    logger.error("Session still invalid for %s after re-login.", platform)
+                    await self.db.update_post(
+                        post_id, status="failed", error_message="Session expired"
+                    )
+                    return False
 
             # Build post content
             tags = json.loads(post["tags"]) if post["tags"] else []

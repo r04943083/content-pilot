@@ -137,6 +137,7 @@ def get_card_prompt(
     style: str = "quote",
     page_label: str | None = None,
     color_index: int = 0,
+    is_cover: bool = False,
 ) -> str:
     """Generate the AI prompt for card generation.
 
@@ -147,6 +148,7 @@ def get_card_prompt(
         style: Card style key
         page_label: Optional page label like "1/4" for multi-card series
         color_index: Index to select a color scheme for variety
+        is_cover: If True, generate a cover card with large title
     """
     style_info = CARD_STYLES.get(style, CARD_STYLES["quote"])
     tags_str = ", ".join(f"#{t}" for t in tags) if tags else "无"
@@ -160,6 +162,15 @@ def get_card_prompt(
         style_description=style_info["description"],
         color_scheme=color_scheme,
     )
+
+    if is_cover:
+        prompt += (
+            "\n重要：这是封面图！请设计为大标题封面卡片："
+            "\n- 标题字体要非常大（至少 72px），居中醒目"
+            "\n- 不需要显示摘要正文，只显示标题"
+            "\n- 可以加装饰性图形、图标或纹理增加视觉冲击力"
+            "\n- 整体设计要像杂志封面一样精美吸引人"
+        )
 
     if page_label:
         prompt += f"\n这是系列图第 {page_label} 张，请在卡片标注页码。"
@@ -185,19 +196,19 @@ def split_content_for_cards(
         List of dicts with keys: title, summary, tags, page_label
     """
     if card_count <= 1:
-        return [{"title": title, "summary": content[:300], "tags": tags, "page_label": None}]
+        return [{"title": title, "summary": content[:300], "tags": tags, "page_label": None, "is_cover": True}]
 
     paragraphs = [p.strip() for p in content.split("\n") if p.strip()]
 
     cards: list[dict] = []
 
-    # Card 1: title + opening summary
-    opening = "\n".join(paragraphs[:max(1, len(paragraphs) // card_count)])
+    # Card 1: cover card — big title only, minimal text
     cards.append({
         "title": title,
-        "summary": opening[:300],
+        "summary": "",
         "tags": [],
         "page_label": f"1/{card_count}",
+        "is_cover": True,
     })
 
     # Middle cards: distribute remaining paragraphs evenly
@@ -215,6 +226,7 @@ def split_content_for_cards(
                 "summary": chunk[:300] if chunk else content[:300],
                 "tags": [],
                 "page_label": f"{i + 2}/{card_count}",
+                "is_cover": False,
             })
         # Last card: remaining paragraphs + tags as CTA
         last_chunk = "\n".join(remaining[middle_count * chunk_size:])
@@ -223,6 +235,7 @@ def split_content_for_cards(
             "summary": last_chunk[:300] if last_chunk else content[-300:],
             "tags": tags,
             "page_label": f"{card_count}/{card_count}",
+            "is_cover": False,
         })
     else:
         # Only 2 cards total: second card gets the rest + tags
@@ -232,6 +245,7 @@ def split_content_for_cards(
             "summary": rest[:300],
             "tags": tags,
             "page_label": f"2/{card_count}",
+            "is_cover": False,
         })
 
     return cards
