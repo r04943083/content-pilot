@@ -85,7 +85,7 @@ def register() -> None:
                     lambda e: _toggle_all_select(e.value)
                 ).props("dense")
 
-                ui.spacer()
+                ui.element("div").classes("flex-grow")
 
                 ui.button(
                     t("publish.publish"),

@@ -83,7 +83,7 @@ def nav_drawer() -> ui.left_drawer:
     current_path = get_current_path()
 
     with ui.left_drawer(value=True).classes(
-        "bg-dark text-white q-pa-none"
+        "bg-dark text-white q-pa-none column flex"
     ).style(f"background: {COLORS['background']} !important;") as drawer:
         # Logo area with SVG
         with ui.row().classes(
@@ -142,7 +142,7 @@ def nav_drawer() -> ui.left_drawer:
             link.classes("hover:bg-primary/20 cursor-pointer")
 
         # Spacer to push language switcher to bottom
-        ui.spacer()
+        ui.element("div").classes("flex-grow")
 
         # Language switcher at bottom
         with ui.row().classes(
