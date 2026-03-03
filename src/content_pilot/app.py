@@ -103,9 +103,25 @@ class App:
     # --- Content Generation ---
 
     async def generate_content(
-        self, topic: str, platform: str, style: str = "tutorial"
-    ) -> tuple[int, GeneratedContent]:
-        """Generate content and save as draft."""
+        self,
+        topic: str,
+        platform: str,
+        style: str = "tutorial",
+        auto_generate_images: bool = False,
+        image_count: int = 1,
+    ) -> tuple[int, GeneratedContent, list[str]]:
+        """Generate content and optionally auto-generate images.
+
+        Args:
+            topic: Content topic
+            platform: Target platform
+            style: Content style
+            auto_generate_images: Whether to auto-generate images
+            image_count: Number of images to generate (1-4)
+
+        Returns:
+            Tuple of (post_id, generated_content, image_paths)
+        """
         content = await self.generator.generate(topic, platform, style)
 
         # Validate
@@ -119,7 +135,40 @@ class App:
             for err in result.errors:
                 logger.warning("Validation: %s", err)
 
-        # Save to database
+        # Auto-generate images if requested
+        image_paths: list[str] = []
+        if auto_generate_images:
+            try:
+                # Generate image prompt from content
+                image_prompt = f"{content.title}. {content.content[:200]}"
+                # Use platform-specific style for images
+                platform_style = {
+                    "xiaohongshu": "aesthetic lifestyle photo",
+                    "douyin": "dynamic vertical photo",
+                    "bilibili": "illustration style",
+                    "weibo": "trending social media image",
+                }
+                style_hint = platform_style.get(platform, "")
+                full_prompt = f"{image_prompt}. Style: {style_hint}"
+
+                for i in range(image_count):
+                    img_bytes = await self.generator.generate_image(full_prompt)
+                    if img_bytes:
+                        # Save to data/images/
+                        import uuid
+                        from pathlib import Path
+
+                        images_dir = Path(self.settings.general.data_dir) / "images"
+                        images_dir.mkdir(parents=True, exist_ok=True)
+                        fname = f"auto_{uuid.uuid4().hex[:8]}_{i}.png"
+                        fpath = images_dir / fname
+                        fpath.write_bytes(img_bytes)
+                        image_paths.append(str(fpath))
+                        logger.info("Auto-generated image: %s", fpath)
+            except Exception as e:
+                logger.error("Auto image generation failed: %s", e)
+
+        # Save to database with images
         post_id = await self.db.create_post(
             platform=platform,
             title=content.title,
@@ -127,8 +176,9 @@ class App:
             tags=json.dumps(content.tags, ensure_ascii=False),
             style=style,
             status="draft",
+            images=json.dumps(image_paths, ensure_ascii=False) if image_paths else None,
         )
-        return post_id, content
+        return post_id, content, image_paths
 
     # --- Publishing ---
 
@@ -219,7 +269,9 @@ class App:
         platform = schedule.get("platform", "")
         style = schedule.get("style", "tutorial")
         if topic:
-            post_id, content = await self.generate_content(topic, platform, style)
+            post_id, content, image_paths = await self.generate_content(
+                topic, platform, style, auto_generate_images=False, image_count=0
+            )
             logger.info(
                 "Generated post %d: %s", post_id, content.title
             )

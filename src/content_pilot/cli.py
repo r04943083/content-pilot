@@ -142,7 +142,9 @@ def generate(topic: str, platform: str, style: str) -> None:
             console.print(f"Generating [bold]{style}[/bold] content about [bold]{topic}[/bold] for [cyan]{platform}[/cyan]...")
 
             try:
-                post_id, content = await app.generate_content(topic, platform, style)
+                post_id, content, image_paths = await app.generate_content(
+                    topic, platform, style, auto_generate_images=False, image_count=0
+                )
             except RuntimeError as e:
                 console.print(f"[red]{e}[/red]")
                 sys.exit(1)
@@ -181,7 +183,9 @@ def generate(topic: str, platform: str, style: str) -> None:
                     console.print("Regenerating...")
                     await app.db.update_post(post_id, status="draft")
                     # Recursive call
-                    post_id2, content2 = await app.generate_content(topic, platform, style)
+                    post_id2, content2, image_paths2 = await app.generate_content(
+                        topic, platform, style, auto_generate_images=False, image_count=0
+                    )
                     console.print(Panel(
                         f"[bold]{content2.title}[/bold]\n\n{content2.content}",
                         title=f"Regenerated Content (ID: {post_id2})",
