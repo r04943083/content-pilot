@@ -134,7 +134,7 @@ def register() -> None:
                     f"color: {COLORS['text_secondary']};"
                 )
 
-                images = json.loads(post.get("images", "[]"))
+                images = json.loads(post.get("images") or "[]")
                 if images:
                     ui.image(images[0]).classes("q-my-md").style(
                         "width: 100%; border-radius: 8px;"
@@ -310,7 +310,7 @@ def register() -> None:
                                     f"background: {COLORS['background']}; border-radius: 6px; cursor: pointer;"
                                 ).on("click", lambda p=post: _show_post_detail(p)):
                                     with ui.row().classes("items-center q-gutter-sm"):
-                                        images = json.loads(post.get("images", "[]"))
+                                        images = json.loads(post.get("images") or "[]")
                                         if images:
                                             ui.image(images[0]).classes("q-ml-sm").style(
                                                 "width: 48px; height: 48px; border-radius: 6px; object-fit: cover;"
@@ -428,7 +428,7 @@ def selectable_post_card(
                 lambda e, pid=post["id"]: on_select(pid, e.value)
             )
 
-            images = json.loads(post.get("images", "[]"))
+            images = json.loads(post.get("images") or "[]")
             if images:
                 ui.image(images[0]).classes("q-mb-sm").style(
                     "width: 100%; height: 180px; object-fit: cover; border-radius: 6px;"
