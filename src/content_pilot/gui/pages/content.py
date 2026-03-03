@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING
 from nicegui import ui
 
 from content_pilot.config import get_settings
+from content_pilot.content.card_templates import CARD_STYLES, DEFAULT_STYLE_MAP
+from content_pilot.gui.components.image_picker import search_unsplash
 from content_pilot.gui.components.nav import page_layout, set_active_nav
 from content_pilot.gui.constants import COLORS, PLATFORMS, STYLES
 from content_pilot.gui.i18n import t
@@ -30,11 +32,19 @@ def _get_images_dir() -> Path:
     return images_dir
 
 
-def _create_draft_card(post: dict) -> None:
-    """Create a draft card for display in the recent drafts section."""
-    with ui.card().classes("q-pa-sm min-w-64 max-w-64").style(
-        f"background-color: {COLORS['surface']};"
-    ):
+def _create_draft_card(post: dict, on_click: callable = None) -> None:
+    """Create a draft card for display in the recent drafts section.
+
+    Args:
+        post: Post dictionary with draft data
+        on_click: Optional click handler callback
+    """
+    card_classes = "q-pa-sm min-w-64 max-w-64"
+    card_style = f"background-color: {COLORS['surface']}; cursor: pointer;"
+
+    with ui.card().classes(card_classes).style(card_style) as card:
+        if on_click:
+            card.on("click", lambda: on_click(post))
         # Platform icon and status
         with ui.row().classes("full-width items-center q-mb-sm"):
             ui.icon("auto_stories" if post["platform"] == "xiaohongshu" else "public").classes(
@@ -175,6 +185,13 @@ def register() -> None:
                             title_edit.value = content.title
                             content_edit.value = content.content
                             tags_edit.value = " ".join(f"#{t}" for t in content.tags)
+
+                            # Auto-fill card generation inputs
+                            card_title_input.value = content.title
+                            card_summary_input.value = content.content[:300]
+                            card_tags_input.value = ", ".join(content.tags)
+                            # Auto-select card style based on platform
+                            card_style_select.value = DEFAULT_STYLE_MAP.get(platform, "quote")
 
                             # Update selected images with auto-generated images
                             if image_paths:
@@ -364,10 +381,88 @@ def register() -> None:
 
                     # Image tabs
                     with ui.tabs().classes("full-width q-mb-sm") as img_tabs:
+                        card_tab = ui.tab("生成图卡", icon="auto_awesome")
                         upload_tab = ui.tab(t("content.upload_images"), icon="upload_file")
                         websearch_tab = ui.tab(t("content.web_search"), icon="public")
 
                     with ui.tab_panels(img_tabs, value=upload_tab).classes("full-width"):
+                        # --- Card Generation tab ---
+                        with ui.tab_panel(card_tab):
+                            ui.label("卡片风格").classes("text-caption q-mb-xs")
+                            card_style_select = ui.radio(
+                                options={k: v["name"] for k, v in CARD_STYLES.items()},
+                                value="quote",
+                            ).classes("q-mb-md")
+
+                            ui.label("标题").classes("text-caption q-mb-xs")
+                            card_title_input = ui.input(
+                                placeholder="自动填充或手动输入...",
+                            ).classes("full-width").props("outlined dense")
+
+                            ui.label("摘要").classes("text-caption q-mb-xs q-mt-sm")
+                            card_summary_input = ui.textarea(
+                                placeholder="自动填充或手动输入...",
+                            ).classes("full-width").props("outlined dense autogrow")
+
+                            ui.label("标签（逗号分隔）").classes("text-caption q-mb-xs q-mt-sm")
+                            card_tags_input = ui.input(
+                                placeholder="标签1, 标签2, ...",
+                            ).classes("full-width").props("outlined dense")
+
+                            card_status_label = ui.label("").classes("text-caption q-mt-sm")
+
+                            async def do_generate_card():
+                                title = card_title_input.value.strip()
+                                summary = card_summary_input.value.strip()
+                                if not title:
+                                    ui.notify("请输入标题", type="warning")
+                                    return
+                                if not summary:
+                                    ui.notify("请输入摘要", type="warning")
+                                    return
+
+                                tags = [
+                                    t.strip()
+                                    for t in card_tags_input.value.split(",")
+                                    if t.strip()
+                                ]
+
+                                card_status_label.text = "正在生成图卡..."
+                                gen_card_btn.props("loading")
+                                try:
+                                    pilot = get_pilot()
+                                    img_bytes = await pilot.generator.generate_image_from_code(
+                                        title=title,
+                                        summary=summary,
+                                        tags=tags,
+                                        style=card_style_select.value,
+                                        platform=platform_select.value,
+                                    )
+                                    if img_bytes:
+                                        images_dir = _get_images_dir()
+                                        fname = f"card_{uuid.uuid4().hex[:8]}.png"
+                                        fpath = images_dir / fname
+                                        fpath.write_bytes(img_bytes)
+                                        if str(fpath) not in selected_images:
+                                            selected_images.append(str(fpath))
+                                        _refresh_image_preview()
+                                        card_status_label.text = "图卡生成成功！"
+                                        ui.notify("图卡已生成", type="positive")
+                                    else:
+                                        card_status_label.text = "生成失败（检查 AI 配置或 Playwright 安装）"
+                                        ui.notify("图卡生成失败", type="negative")
+                                except Exception as e:
+                                    card_status_label.text = f"错误: {e}"
+                                    logger.error("Card generation error: %s", e)
+                                finally:
+                                    gen_card_btn.props(remove="loading")
+
+                            gen_card_btn = ui.button(
+                                "生成图卡",
+                                icon="auto_awesome",
+                                on_click=do_generate_card,
+                            ).props("color=primary").classes("q-mt-md")
+
                         with ui.tab_panel(upload_tab):
                             # Upload area
                             async def handle_upload(e):
@@ -407,9 +502,8 @@ def register() -> None:
                                     ui.label(t("content.searching")).classes("text-caption")
 
                                 try:
-                                    pilot = get_pilot()
-                                    # Use Unsplash search
-                                    results = await pilot.image.search_unsplash(query, count=9)
+                                    # Use Unsplash search directly
+                                    results = await search_unsplash(query, count=9)
 
                                     websearch_results.clear()
                                     with websearch_results:
@@ -513,13 +607,50 @@ def register() -> None:
                                 )
                             else:
                                 for post in posts:
-                                    _create_draft_card(post)
+                                    _create_draft_card(post, on_click=_load_draft_for_edit)
 
                         except Exception as e:
                             logger.error("Failed to load recent drafts: %s", e)
                             ui.label("Failed to load drafts").classes(
                                 "text-caption text-red q-px-md"
                             )
+
+                def _load_draft_for_edit(post: dict):
+                    """Load a draft post into the edit form for editing."""
+                    # Fill the form fields
+                    title_edit.value = post.get("title", "")
+                    content_edit.value = post.get("content", "")
+
+                    # Parse and format tags
+                    tags_str = post.get("tags", "")
+                    if tags_str:
+                        try:
+                            tag_list = json.loads(tags_str)
+                            tags_edit.value = " ".join(f"#{t}" for t in tag_list if t)
+                        except (json.JSONDecodeError, TypeError):
+                            tags_edit.value = tags_str
+                    else:
+                        tags_edit.value = ""
+
+                    # Set the post_id for subsequent operations
+                    generated["post_id"] = post["id"]
+                    generated["title"] = post.get("title", "")
+                    generated["content"] = post.get("content", "")
+                    generated["tags"] = json.loads(post.get("tags", "[]")) if post.get("tags") else []
+
+                    # Load existing images
+                    selected_images.clear()
+                    images_str = post.get("images", "")
+                    if images_str:
+                        try:
+                            img_list = json.loads(images_str)
+                            selected_images.extend(img_list)
+                        except (json.JSONDecodeError, TypeError):
+                            pass
+                    _refresh_image_preview()
+
+                    # Notify user
+                    ui.notify(f"Loaded draft: {post.get('title', 'Untitled')}", type="info")
 
                 # Load recent drafts on page load
                 await _refresh_recent_drafts()

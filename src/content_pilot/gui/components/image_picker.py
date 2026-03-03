@@ -1,4 +1,4 @@
-"""Image picker component: AI generation, web search, and local upload."""
+"""Image picker component: AI code-generated cards, web search, and local upload."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import httpx
 from nicegui import events, ui
 
 from content_pilot.config import get_settings
+from content_pilot.content.card_templates import CARD_STYLES, DEFAULT_STYLE_MAP
 from content_pilot.gui.main import get_pilot
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def _get_images_dir() -> Path:
 
 
 def image_picker(selected_images: list[str]) -> None:
-    """Render image picker with three tabs: AI Generate, Web Search, Upload.
+    """Render image picker with three tabs: Code-Generated Cards, Web Search, Upload.
 
     selected_images is a mutable list that will be filled with chosen image paths.
     """
@@ -67,64 +68,84 @@ def image_picker(selected_images: list[str]) -> None:
                             )
 
     with ui.tabs().classes("full-width") as tabs:
-        ai_tab = ui.tab("AI Generate", icon="auto_awesome")
+        ai_tab = ui.tab("代码生成图卡", icon="auto_awesome")
         search_tab = ui.tab("Web Search", icon="image_search")
         upload_tab = ui.tab("Upload", icon="upload_file")
 
     with ui.tab_panels(tabs, value=ai_tab).classes("full-width"):
-        # --- AI Generate tab ---
+        # --- Code-Generated Card tab ---
         with ui.tab_panel(ai_tab):
-            ai_prompt = ui.input(
-                "Image prompt",
-                placeholder="Describe the image...",
-            ).classes("full-width").props("outlined")
-            ai_status = ui.label("").classes("text-caption")
+            ui.label("卡片风格").classes("text-caption q-mb-xs")
+            card_style = ui.radio(
+                options={k: v["name"] for k, v in CARD_STYLES.items()},
+                value="quote",
+            ).classes("q-mb-md")
 
-            async def gen_ai_image():
-                prompt = ai_prompt.value.strip()
-                if not prompt:
-                    ui.notify(
-                        "Please enter a prompt", type="warning"
-                    )
+            ui.label("标题").classes("text-caption q-mb-xs")
+            card_title = ui.input(
+                placeholder="输入标题...",
+            ).classes("full-width").props("outlined dense")
+
+            ui.label("摘要").classes("text-caption q-mb-xs q-mt-sm")
+            card_summary = ui.textarea(
+                placeholder="输入内容摘要...",
+            ).classes("full-width").props("outlined dense autogrow")
+
+            ui.label("标签（逗号分隔）").classes("text-caption q-mb-xs q-mt-sm")
+            card_tags = ui.input(
+                placeholder="标签1, 标签2, ...",
+            ).classes("full-width").props("outlined dense")
+
+            card_status = ui.label("").classes("text-caption q-mt-sm")
+
+            async def gen_card_image():
+                title = card_title.value.strip()
+                summary = card_summary.value.strip()
+                if not title:
+                    ui.notify("请输入标题", type="warning")
                     return
-                ai_status.text = "Generating image with DALL-E..."
-                ai_gen_btn.props("loading")
+                if not summary:
+                    ui.notify("请输入摘要", type="warning")
+                    return
+
+                tags = [
+                    t.strip()
+                    for t in card_tags.value.split(",")
+                    if t.strip()
+                ]
+
+                card_status.text = "正在生成图卡..."
+                card_gen_btn.props("loading")
                 try:
                     pilot = get_pilot()
-                    img_bytes = await pilot.generator.generate_image(
-                        prompt
+                    img_bytes = await pilot.generator.generate_image_from_code(
+                        title=title,
+                        summary=summary,
+                        tags=tags,
+                        style=card_style.value,
                     )
                     if img_bytes:
                         images_dir = _get_images_dir()
-                        fname = f"ai_{uuid.uuid4().hex[:8]}.png"
+                        fname = f"card_{uuid.uuid4().hex[:8]}.png"
                         fpath = images_dir / fname
                         fpath.write_bytes(img_bytes)
                         _add_image(str(fpath))
-                        ai_status.text = "Image generated!"
-                        ui.notify(
-                            "Image generated", type="positive"
-                        )
+                        card_status.text = "图卡生成成功！"
+                        ui.notify("图卡已生成", type="positive")
                     else:
-                        ai_status.text = (
-                            "Generation failed (check OpenAI API key)"
-                        )
-                        ui.notify(
-                            "Image generation failed",
-                            type="negative",
-                        )
+                        card_status.text = "生成失败（检查 AI 配置或 Playwright 安装）"
+                        ui.notify("图卡生成失败", type="negative")
                 except Exception as e:
-                    ai_status.text = f"Error: {e}"
-                    logger.error(
-                        "AI image generation error: %s", e
-                    )
+                    card_status.text = f"错误: {e}"
+                    logger.error("Card generation error: %s", e)
                 finally:
-                    ai_gen_btn.props(remove="loading")
+                    card_gen_btn.props(remove="loading")
 
-            ai_gen_btn = ui.button(
-                "Generate",
+            card_gen_btn = ui.button(
+                "生成图卡",
                 icon="auto_awesome",
-                on_click=gen_ai_image,
-            ).props("color=primary")
+                on_click=gen_card_image,
+            ).props("color=primary").classes("q-mt-md")
 
         # --- Web Search tab ---
         with ui.tab_panel(search_tab):

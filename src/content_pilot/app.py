@@ -11,6 +11,7 @@ from content_pilot.analytics import AnalyticsCollector
 from content_pilot.browser import BrowserManager
 from content_pilot.config import get_settings
 from content_pilot.content import ContentGenerator, GeneratedContent
+from content_pilot.content.card_templates import DEFAULT_STYLE_MAP
 from content_pilot.database import Database
 from content_pilot.platforms import PlatformRegistry
 from content_pilot.platforms.base import PostContent
@@ -135,24 +136,22 @@ class App:
             for err in result.errors:
                 logger.warning("Validation: %s", err)
 
-        # Auto-generate images if requested
+        # Auto-generate images if requested (using code-generated cards)
         image_paths: list[str] = []
         if auto_generate_images:
             try:
-                # Generate image prompt from content
-                image_prompt = f"{content.title}. {content.content[:200]}"
-                # Use platform-specific style for images
-                platform_style = {
-                    "xiaohongshu": "aesthetic lifestyle photo",
-                    "douyin": "dynamic vertical photo",
-                    "bilibili": "illustration style",
-                    "weibo": "trending social media image",
-                }
-                style_hint = platform_style.get(platform, "")
-                full_prompt = f"{image_prompt}. Style: {style_hint}"
+                # Get platform-specific card style
+                card_style = DEFAULT_STYLE_MAP.get(platform, "quote")
 
                 for i in range(image_count):
-                    img_bytes = await self.generator.generate_image(full_prompt)
+                    # Use code-generated cards instead of DALL-E
+                    img_bytes = await self.generator.generate_image_from_code(
+                        title=content.title,
+                        summary=content.content[:300],  # Use first 300 chars as summary
+                        tags=content.tags,
+                        style=card_style,
+                        platform=platform,
+                    )
                     if img_bytes:
                         # Save to data/images/
                         import uuid
@@ -160,11 +159,11 @@ class App:
 
                         images_dir = Path(self.settings.general.data_dir) / "images"
                         images_dir.mkdir(parents=True, exist_ok=True)
-                        fname = f"auto_{uuid.uuid4().hex[:8]}_{i}.png"
+                        fname = f"card_{uuid.uuid4().hex[:8]}_{i}.png"
                         fpath = images_dir / fname
                         fpath.write_bytes(img_bytes)
                         image_paths.append(str(fpath))
-                        logger.info("Auto-generated image: %s", fpath)
+                        logger.info("Auto-generated card image: %s", fpath)
             except Exception as e:
                 logger.error("Auto image generation failed: %s", e)
 

@@ -51,6 +51,8 @@ class AIConfig(BaseModel):
     glm_base_url: str = "https://open.bigmodel.cn/api/paas/v4/"
     max_tokens: int = 2000
     temperature: float = 0.7
+    image_generation_mode: Literal["none", "code", "dalle"] = "code"
+    default_card_style: str = "auto"  # auto = based on platform
 
 
 class DatabaseConfig(BaseModel):

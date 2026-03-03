@@ -6,6 +6,8 @@ import logging
 from dataclasses import dataclass, field
 
 from content_pilot.config import get_settings
+from content_pilot.content.card_generator import CardGenerator
+from content_pilot.content.card_templates import DEFAULT_STYLE_MAP
 from content_pilot.content.templates import get_prompt
 
 logger = logging.getLogger(__name__)
@@ -25,6 +27,7 @@ class ContentGenerator:
 
     def __init__(self) -> None:
         self._settings = get_settings()
+        self._card_generator = CardGenerator(self._settings)
 
     def _check_api_key(self) -> None:
         """Raise early if the API key for the active provider is missing."""
@@ -156,6 +159,43 @@ class ContentGenerator:
         except Exception as e:
             logger.error("Image generation failed: %s", e)
             return None
+
+    async def generate_image_from_code(
+        self,
+        title: str,
+        summary: str,
+        tags: list[str],
+        style: str = "auto",
+        platform: str | None = None,
+    ) -> bytes | None:
+        """
+        Generate a card image using AI-written HTML/CSS rendered via Playwright.
+
+        This method uses the configured text AI (Qwen/GLM/Claude/OpenAI) to write
+        HTML/CSS code, then renders it to an image using Playwright.
+
+        Args:
+            title: Card title
+            summary: Card content/summary
+            tags: List of hashtags
+            style: Card style (quote, title, list, minimal) or "auto"
+            platform: Target platform for auto style selection
+
+        Returns:
+            PNG image bytes or None on failure
+        """
+        # Auto-select style based on platform
+        if style == "auto" and platform:
+            style = DEFAULT_STYLE_MAP.get(platform, "quote")
+        elif style == "auto":
+            style = "quote"
+
+        return await self._card_generator.generate_card(
+            title=title,
+            summary=summary,
+            tags=tags,
+            style=style,
+        )
 
     def _parse_response(
         self, raw: str, platform: str, style: str
