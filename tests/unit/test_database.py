@@ -108,3 +108,129 @@ async def test_schedule_crud(db):
 async def test_count_posts_today(db):
     count = await db.count_posts_today("xiaohongshu")
     assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_count_posts_today_with_published(db):
+    """count_posts_today counts posts published today (UTC)."""
+    from datetime import datetime, timezone
+
+    # Use UTC time since SQLite DATE('now') is UTC
+    utc_now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    await db.create_post(
+        platform="xiaohongshu",
+        content="Published today",
+        status="published",
+        published_at=utc_now,
+    )
+    await db.create_post(
+        platform="xiaohongshu",
+        content="Draft",
+        status="draft",
+    )
+    count = await db.count_posts_today("xiaohongshu")
+    assert count == 1
+
+
+@pytest.mark.asyncio
+async def test_count_posts_today_different_platforms(db):
+    """count_posts_today is platform-specific."""
+    from datetime import datetime, timezone
+
+    utc_now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+    await db.create_post(
+        platform="xiaohongshu",
+        content="XHS",
+        status="published",
+        published_at=utc_now,
+    )
+    await db.create_post(
+        platform="douyin",
+        content="DY",
+        status="published",
+        published_at=utc_now,
+    )
+    assert await db.count_posts_today("xiaohongshu") == 1
+    assert await db.count_posts_today("douyin") == 1
+
+
+@pytest.mark.asyncio
+async def test_execute_rollback_on_error(db):
+    """execute() rolls back on error."""
+    with pytest.raises(Exception):
+        await db.execute("INSERT INTO nonexistent_table VALUES (?)", (1,))
+    # DB should still be usable
+    count = await db.count_posts_today("xiaohongshu")
+    assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_conn_property_raises_when_not_connected(tmp_path):
+    """Accessing conn before connect() raises RuntimeError."""
+    database = Database(tmp_path / "test2.db")
+    with pytest.raises(RuntimeError, match="not connected"):
+        _ = database.conn
+
+
+@pytest.mark.asyncio
+async def test_delete_post(db):
+    post_id = await db.create_post(
+        platform="xiaohongshu", content="To Delete", status="draft"
+    )
+    await db.delete_post(post_id)
+    post = await db.get_post(post_id)
+    assert post is None
+
+
+@pytest.mark.asyncio
+async def test_get_post_not_found(db):
+    post = await db.get_post(99999)
+    assert post is None
+
+
+@pytest.mark.asyncio
+async def test_connection_lifecycle(tmp_path):
+    """Database can be connected and closed multiple times."""
+    database = Database(tmp_path / "lifecycle.db")
+    await database.connect()
+    await database.close()
+
+    # Can reconnect
+    await database.connect()
+    count = await database.count_posts_today("xiaohongshu")
+    assert count == 0
+    await database.close()
+
+
+@pytest.mark.asyncio
+async def test_analytics_recording(db):
+    """Analytics can be recorded and retrieved."""
+    post_id = await db.create_post(
+        platform="xiaohongshu", content="Test", status="published"
+    )
+    await db.record_analytics(
+        post_id=post_id,
+        platform="xiaohongshu",
+        views=100,
+        likes=50,
+        comments=10,
+        shares=5,
+        favorites=20,
+    )
+    data = await db.get_post_analytics(post_id)
+    assert len(data) == 1
+    assert data[0]["views"] == 100
+
+
+@pytest.mark.asyncio
+async def test_fetch_one_returns_none_for_no_match(db):
+    result = await db.fetch_one(
+        "SELECT * FROM posts WHERE id = ?", (99999,)
+    )
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_fetch_all_returns_empty_list(db):
+    result = await db.fetch_all("SELECT * FROM posts WHERE 1=0")
+    assert result == []

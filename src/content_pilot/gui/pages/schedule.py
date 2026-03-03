@@ -11,7 +11,7 @@ from apscheduler.triggers.cron import CronTrigger
 from nicegui import ui
 
 from content_pilot.gui.components.nav import page_layout, set_active_nav
-from content_pilot.gui.constants import COLORS, PLATFORMS, STYLES
+from content_pilot.gui.constants import COLORS, PLATFORMS, PLATFORM_ICONS, STYLES
 from content_pilot.gui.i18n import t
 from content_pilot.gui.main import get_pilot
 
@@ -441,7 +441,7 @@ def register() -> None:
                                                 for sched in day_schedules[:3]:  # Max 3 shown
                                                     # Platform icon
                                                     platform = sched.get("platform", "unknown")
-                                                    icon_name = PLATFORMS.get(platform, "schedule")
+                                                    icon_name = PLATFORM_ICONS.get(platform, "schedule")
                                                     ui.icon(icon_name, size="xs").classes(
                                                         "text-primary"
                                                     ).style(f"color: {COLORS['primary_light']};")

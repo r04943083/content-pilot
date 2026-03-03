@@ -19,7 +19,7 @@ console = Console()
 
 def run_async(coro):
     """Run async function from sync Click context."""
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 def get_app():

@@ -69,6 +69,9 @@ class SchedulerEngine:
             schedule["name"], schedule["platform"],
         )
         try:
+            # Health check: verify DB is reachable before running callbacks
+            await self._db.fetch_one("SELECT 1")
+
             if self._generate_callback:
                 await self._generate_callback(schedule)
             if self._publish_callback:

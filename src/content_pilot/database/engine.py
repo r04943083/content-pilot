@@ -117,9 +117,13 @@ class Database:
         return self._conn
 
     async def execute(self, sql: str, params: tuple = ()) -> aiosqlite.Cursor:
-        cursor = await self.conn.execute(sql, params)
-        await self.conn.commit()
-        return cursor
+        try:
+            cursor = await self.conn.execute(sql, params)
+            await self.conn.commit()
+            return cursor
+        except Exception:
+            await self.conn.rollback()
+            raise
 
     async def fetch_one(self, sql: str, params: tuple = ()) -> dict | None:
         cursor = await self.conn.execute(sql, params)

@@ -4,23 +4,16 @@ from __future__ import annotations
 
 import logging
 import uuid
-from pathlib import Path
 
 import httpx
 from nicegui import events, ui
 
-from content_pilot.config import get_settings
 from content_pilot.content.card_templates import CARD_STYLES, DEFAULT_STYLE_MAP
+from content_pilot.gui.i18n import t
 from content_pilot.gui.main import get_pilot
+from content_pilot.utils.files import get_images_dir
 
 logger = logging.getLogger(__name__)
-
-
-def _get_images_dir() -> Path:
-    data_dir = Path(get_settings().general.data_dir).resolve()
-    images_dir = data_dir / "images"
-    images_dir.mkdir(parents=True, exist_ok=True)
-    return images_dir
 
 
 def image_picker(selected_images: list[str]) -> None:
@@ -47,7 +40,7 @@ def image_picker(selected_images: list[str]) -> None:
         preview_container.clear()
         with preview_container:
             if not selected_images:
-                ui.label("No images selected").classes("text-grey")
+                ui.label(t("content.no_images_selected")).classes("text-grey")
             else:
                 with ui.row().classes("q-gutter-sm flex-wrap"):
                     for img_path in list(selected_images):
@@ -68,32 +61,32 @@ def image_picker(selected_images: list[str]) -> None:
                             )
 
     with ui.tabs().classes("full-width") as tabs:
-        ai_tab = ui.tab("代码生成图卡", icon="auto_awesome")
-        search_tab = ui.tab("Web Search", icon="image_search")
-        upload_tab = ui.tab("Upload", icon="upload_file")
+        ai_tab = ui.tab(t("content.card_generate"), icon="auto_awesome")
+        search_tab = ui.tab(t("content.web_search"), icon="image_search")
+        upload_tab = ui.tab(t("content.upload_images"), icon="upload_file")
 
     with ui.tab_panels(tabs, value=ai_tab).classes("full-width"):
         # --- Code-Generated Card tab ---
         with ui.tab_panel(ai_tab):
-            ui.label("卡片风格").classes("text-caption q-mb-xs")
+            ui.label(t("content.card_style")).classes("text-caption q-mb-xs")
             card_style = ui.radio(
                 options={k: v["name"] for k, v in CARD_STYLES.items()},
                 value="quote",
             ).classes("q-mb-md")
 
-            ui.label("标题").classes("text-caption q-mb-xs")
+            ui.label(t("content.card_title")).classes("text-caption q-mb-xs")
             card_title = ui.input(
-                placeholder="输入标题...",
+                placeholder=t("content.card_title_placeholder"),
             ).classes("full-width").props("outlined dense")
 
-            ui.label("摘要").classes("text-caption q-mb-xs q-mt-sm")
+            ui.label(t("content.card_summary")).classes("text-caption q-mb-xs q-mt-sm")
             card_summary = ui.textarea(
-                placeholder="输入内容摘要...",
+                placeholder=t("content.card_summary_placeholder"),
             ).classes("full-width").props("outlined dense autogrow")
 
-            ui.label("标签（逗号分隔）").classes("text-caption q-mb-xs q-mt-sm")
+            ui.label(t("content.card_tags")).classes("text-caption q-mb-xs q-mt-sm")
             card_tags = ui.input(
-                placeholder="标签1, 标签2, ...",
+                placeholder=t("content.card_tags_placeholder"),
             ).classes("full-width").props("outlined dense")
 
             card_status = ui.label("").classes("text-caption q-mt-sm")
@@ -102,19 +95,19 @@ def image_picker(selected_images: list[str]) -> None:
                 title = card_title.value.strip()
                 summary = card_summary.value.strip()
                 if not title:
-                    ui.notify("请输入标题", type="warning")
+                    ui.notify(t("content.card_title_required"), type="warning")
                     return
                 if not summary:
-                    ui.notify("请输入摘要", type="warning")
+                    ui.notify(t("content.card_summary_required"), type="warning")
                     return
 
                 tags = [
-                    t.strip()
-                    for t in card_tags.value.split(",")
-                    if t.strip()
+                    tag.strip()
+                    for tag in card_tags.value.split(",")
+                    if tag.strip()
                 ]
 
-                card_status.text = "正在生成图卡..."
+                card_status.text = t("content.card_generating")
                 card_gen_btn.props("loading")
                 try:
                     pilot = get_pilot()
@@ -125,24 +118,25 @@ def image_picker(selected_images: list[str]) -> None:
                         style=card_style.value,
                     )
                     if img_bytes:
-                        images_dir = _get_images_dir()
+                        images_dir = get_images_dir()
                         fname = f"card_{uuid.uuid4().hex[:8]}.png"
                         fpath = images_dir / fname
                         fpath.write_bytes(img_bytes)
                         _add_image(str(fpath))
-                        card_status.text = "图卡生成成功！"
-                        ui.notify("图卡已生成", type="positive")
+                        card_status.text = t("content.card_generated")
+                        ui.notify(t("content.card_added"), type="positive")
                     else:
-                        card_status.text = "生成失败（检查 AI 配置或 Playwright 安装）"
-                        ui.notify("图卡生成失败", type="negative")
+                        card_status.text = t("content.card_failed_detail")
+                        ui.notify(t("content.card_failed"), type="negative")
                 except Exception as e:
-                    card_status.text = f"错误: {e}"
+                    card_status.text = t("common.error_generic", error=str(e))
+                    ui.notify(t("common.error_generic", error=str(e)), type="negative")
                     logger.error("Card generation error: %s", e)
                 finally:
                     card_gen_btn.props(remove="loading")
 
             card_gen_btn = ui.button(
-                "生成图卡",
+                t("content.card_generate"),
                 icon="auto_awesome",
                 on_click=gen_card_image,
             ).props("color=primary").classes("q-mt-md")
@@ -150,8 +144,8 @@ def image_picker(selected_images: list[str]) -> None:
         # --- Web Search tab ---
         with ui.tab_panel(search_tab):
             search_query = ui.input(
-                "Search query",
-                placeholder="e.g. sunset beach",
+                t("content.search_query"),
+                placeholder=t("content.search_query_placeholder"),
             ).classes("full-width").props("outlined")
             search_results_container = ui.row().classes(
                 "q-gutter-sm flex-wrap"
@@ -161,19 +155,19 @@ def image_picker(selected_images: list[str]) -> None:
                 query = search_query.value.strip()
                 if not query:
                     ui.notify(
-                        "Please enter a search query",
+                        t("content.enter_search_query"),
                         type="warning",
                     )
                     return
                 search_results_container.clear()
                 with search_results_container:
-                    ui.label("Searching...").classes("text-caption")
+                    ui.label(t("content.searching")).classes("text-caption")
                 try:
                     urls = await search_unsplash(query, count=6)
                     search_results_container.clear()
                     with search_results_container:
                         if not urls:
-                            ui.label("No results found").classes(
+                            ui.label(t("content.no_results")).classes(
                                 "text-grey"
                             )
                         for url in urls:
@@ -187,7 +181,7 @@ def image_picker(selected_images: list[str]) -> None:
                                 if path:
                                     _add_image(path)
                                     ui.notify(
-                                        "Image added",
+                                        t("content.image_added"),
                                         type="positive",
                                     )
 
@@ -198,7 +192,7 @@ def image_picker(selected_images: list[str]) -> None:
                                     "w-24 h-24 object-cover"
                                 ).style("border-radius: 6px;")
                                 ui.button(
-                                    "Add",
+                                    t("common.add"),
                                     icon="add",
                                     on_click=download_and_add,
                                 ).props(
@@ -207,12 +201,12 @@ def image_picker(selected_images: list[str]) -> None:
                 except Exception as e:
                     search_results_container.clear()
                     with search_results_container:
-                        ui.label(f"Search error: {e}").classes(
+                        ui.label(t("common.error_generic", error=str(e))).classes(
                             "text-red"
                         )
 
             ui.button(
-                "Search", icon="search", on_click=do_search
+                t("common.search"), icon="search", on_click=do_search
             ).props("color=primary")
 
         # --- Upload tab ---
@@ -221,7 +215,7 @@ def image_picker(selected_images: list[str]) -> None:
             async def handle_upload(
                 e: events.UploadEventArguments,
             ):
-                images_dir = _get_images_dir()
+                images_dir = get_images_dir()
                 fname = (
                     f"upload_{uuid.uuid4().hex[:8]}_{e.name}"
                 )
@@ -229,18 +223,18 @@ def image_picker(selected_images: list[str]) -> None:
                 fpath.write_bytes(e.content.read())
                 _add_image(str(fpath))
                 ui.notify(
-                    f"Uploaded: {e.name}", type="positive"
+                    t("content.uploaded", name=e.name), type="positive"
                 )
 
             ui.upload(
-                label="Drop images here or click to upload",
+                label=t("content.drop_images_here"),
                 on_upload=handle_upload,
                 auto_upload=True,
                 multiple=True,
             ).classes("full-width").props('accept="image/*"')
 
     # --- Selected images preview ---
-    ui.label("Selected Images").classes(
+    ui.label(t("content.selected_images")).classes(
         "text-subtitle1 q-mt-md"
     )
     preview_container = ui.row().classes(
@@ -263,7 +257,7 @@ async def search_unsplash(
 async def download_image(url: str) -> str | None:
     """Download an image URL to data/images/, return local path."""
     try:
-        images_dir = _get_images_dir()
+        images_dir = get_images_dir()
         async with httpx.AsyncClient(
             follow_redirects=True, timeout=30
         ) as client:

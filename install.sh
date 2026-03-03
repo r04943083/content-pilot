@@ -75,13 +75,12 @@ ensure_venv_works() {
 
 # --- Check if Playwright system deps are already installed ---
 playwright_deps_ok() {
-    # Quick check: try to find the key libs that Chromium needs
-    for lib in libnspr4.so libnss3.so libatk-1.0.so.0; do
-        if ! ldconfig -p 2>/dev/null | grep -q "$lib"; then
-            return 1
-        fi
-    done
-    return 0
+    python3 -c "
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    b = p.chromium.launch(headless=True)
+    b.close()
+" 2>/dev/null
 }
 
 # --- Main ---

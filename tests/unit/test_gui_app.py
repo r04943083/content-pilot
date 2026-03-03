@@ -70,26 +70,27 @@ class TestImageHelpers:
             assert "nature" in url
 
     def test_get_images_dir(self, tmp_path, monkeypatch):
-        from content_pilot.gui.components import image_picker
+        from content_pilot.utils import files as files_mod
+        from content_pilot.utils.files import get_images_dir
 
         test_dir = tmp_path / "data"
-        # Patch get_settings to return a mock with data_dir pointing to tmp
         from unittest.mock import MagicMock
 
         mock_settings = MagicMock()
         mock_settings.general.data_dir = str(test_dir)
-        monkeypatch.setattr(image_picker, "get_settings", lambda: mock_settings)
-        result = image_picker._get_images_dir()
-        assert result == test_dir / "images"
+        monkeypatch.setattr(files_mod, "get_settings", lambda: mock_settings)
+        result = get_images_dir()
+        assert result == (test_dir / "images").resolve()
         assert result.exists()
 
     @pytest.mark.asyncio
     async def test_download_image_bad_url(self, tmp_path, monkeypatch):
-        from content_pilot.gui.components import image_picker
+        from content_pilot.gui.components.image_picker import download_image
+        from content_pilot.utils import files as files_mod
         from unittest.mock import MagicMock
 
         mock_settings = MagicMock()
         mock_settings.general.data_dir = str(tmp_path / "data")
-        monkeypatch.setattr(image_picker, "get_settings", lambda: mock_settings)
-        result = await image_picker.download_image("http://invalid.test/no-image.jpg")
+        monkeypatch.setattr(files_mod, "get_settings", lambda: mock_settings)
+        result = await download_image("http://invalid.test/no-image.jpg")
         assert result is None

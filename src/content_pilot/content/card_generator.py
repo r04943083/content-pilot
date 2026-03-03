@@ -213,19 +213,21 @@ class CardGenerator:
 
             async with async_playwright() as p:
                 browser = await p.chromium.launch()
-                page = await browser.new_page(
-                    viewport={"width": CARD_WIDTH, "height": CARD_HEIGHT},
-                    device_scale_factor=DEVICE_SCALE_FACTOR,
-                )
+                try:
+                    page = await browser.new_page(
+                        viewport={"width": CARD_WIDTH, "height": CARD_HEIGHT},
+                        device_scale_factor=DEVICE_SCALE_FACTOR,
+                    )
 
-                # Set the HTML content
-                await page.set_content(html_content, wait_until="networkidle")
+                    # Set the HTML content
+                    await page.set_content(html_content, wait_until="networkidle")
 
-                # Take screenshot
-                screenshot = await page.screenshot(type="png")
+                    # Take screenshot
+                    screenshot = await page.screenshot(type="png")
 
-                await browser.close()
-                return screenshot
+                    return screenshot
+                finally:
+                    await browser.close()
 
         except ImportError:
             logger.error(

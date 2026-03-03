@@ -5,31 +5,22 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from nicegui import ui
 
-from content_pilot.config import get_settings
 from content_pilot.content.card_templates import CARD_STYLES, DEFAULT_STYLE_MAP
 from content_pilot.gui.components.image_picker import search_unsplash
 from content_pilot.gui.components.nav import page_layout, set_active_nav
 from content_pilot.gui.constants import COLORS, PLATFORMS, STYLES
 from content_pilot.gui.i18n import t
 from content_pilot.gui.main import get_pilot
+from content_pilot.utils.files import get_images_dir
 
 if TYPE_CHECKING:
     from content_pilot.app import App
 
 logger = logging.getLogger(__name__)
-
-
-def _get_images_dir() -> Path:
-    """Get the images directory path."""
-    data_dir = Path(get_settings().general.data_dir).resolve()
-    images_dir = data_dir / "images"
-    images_dir.mkdir(parents=True, exist_ok=True)
-    return images_dir
 
 
 def _create_draft_card(post: dict, on_click: callable = None) -> None:
@@ -40,7 +31,10 @@ def _create_draft_card(post: dict, on_click: callable = None) -> None:
         on_click: Optional click handler callback
     """
     card_classes = "q-pa-sm min-w-64 max-w-64"
-    card_style = f"background-color: {COLORS['surface']}; cursor: pointer;"
+    card_style = (
+        f"background-color: {COLORS['surface']}; cursor: pointer; "
+        f"border-radius: {COLORS.get('card_radius', '12px')};"
+    )
 
     with ui.card().classes(card_classes).style(card_style) as card:
         if on_click:
@@ -96,8 +90,9 @@ def register() -> None:
             with ui.row().classes("full-width q-gutter-md items-start flex-wrap"):
 
                 # --- Left: Generation Form ---
-                with ui.card().classes("q-pa-md").style(
+                with ui.card().classes("q-pa-md col-12 col-md-4").style(
                     f"background-color: {COLORS['surface']}; "
+                    f"border-radius: 12px; "
                     "flex: 1 1 280px; min-width: 280px; max-width: 360px;"
                 ):
                     ui.label(t("content.generate")).classes(
@@ -184,7 +179,7 @@ def register() -> None:
                             # Update preview fields
                             title_edit.value = content.title
                             content_edit.value = content.content
-                            tags_edit.value = " ".join(f"#{t}" for t in content.tags)
+                            tags_edit.value = " ".join(f"#{tag}" for tag in content.tags)
 
                             # Auto-fill card generation inputs
                             card_title_input.value = content.title
@@ -205,8 +200,8 @@ def register() -> None:
                             ui.notify(t("content.generated"), type="positive")
 
                         except Exception as e:
-                            status_label.text = f"{t('common.error')}: {e}"
-                            ui.notify(f"{t('common.error')}: {e}", type="negative")
+                            status_label.text = t("common.error_generic", error=str(e))
+                            ui.notify(t("common.error_generic", error=str(e)), type="negative")
                             logger.error("Content generation error: %s", e)
                         finally:
                             gen_btn.props(remove="loading")
@@ -214,8 +209,9 @@ def register() -> None:
                     gen_btn.on_click(do_generate)
 
                 # --- Center: Preview/Edit ---
-                with ui.card().classes("q-pa-md").style(
+                with ui.card().classes("q-pa-md col-12 col-md-4").style(
                     f"background-color: {COLORS['surface']}; "
+                    f"border-radius: 12px; "
                     "flex: 2 1 320px; min-width: 320px;"
                 ):
                     ui.label(t("content.preview_edit")).classes(
@@ -242,12 +238,16 @@ def register() -> None:
                     with ui.card().classes("q-pa-sm q-mb-md").style(
                         f"background-color: {COLORS['background']}; border-left: 4px solid {COLORS['primary']};"
                     ):
-                        ui.label("Platform Preview").classes("text-caption text-secondary")
+                        ui.label(t("content.platform_preview")).classes("text-caption text-secondary")
                         platform_preview = ui.label("").classes("text-subtitle2")
 
                         def update_platform_preview():
                             platform = platform_select.value
-                            platform_preview.text = f"Target: {platform} | Style: {style_select.value}"
+                            platform_preview.text = t(
+                                "content.target_style",
+                                platform=platform,
+                                style=style_select.value,
+                            )
 
                         platform_select.on_value_change(lambda e: update_platform_preview())
                         style_select.on_value_change(lambda e: update_platform_preview())
@@ -268,7 +268,7 @@ def register() -> None:
 
                         async def do_approve():
                             if not generated["post_id"]:
-                                ui.notify("Generate content first", type="warning")
+                                ui.notify(t("content.generate_first"), type="warning")
                                 return
 
                             approve_btn.props("loading")
@@ -277,9 +277,9 @@ def register() -> None:
                                 raw_tags = tags_edit.value.strip()
                                 tag_list = (
                                     [
-                                        t.strip().lstrip("#")
-                                        for t in raw_tags.split("#")
-                                        if t.strip()
+                                        tag.strip().lstrip("#")
+                                        for tag in raw_tags.split("#")
+                                        if tag.strip()
                                     ]
                                     if raw_tags
                                     else []
@@ -326,7 +326,7 @@ def register() -> None:
 
                         async def do_discard():
                             if not generated["post_id"]:
-                                ui.notify("Nothing to discard", type="info")
+                                ui.notify(t("content.nothing_to_discard"), type="info")
                                 return
 
                             async def confirm_discard():
@@ -343,7 +343,7 @@ def register() -> None:
                                 dialog.close()
 
                             with ui.dialog() as dialog, ui.card():
-                                ui.label("Are you sure you want to discard this post?")
+                                ui.label(t("content.confirm_discard"))
                                 with ui.row().classes("q-gutter-sm q-mt-sm"):
                                     ui.button(
                                         t("common.yes"),
@@ -359,8 +359,9 @@ def register() -> None:
                         discard_btn.on_click(do_discard)
 
                 # --- Right: Image Area ---
-                with ui.card().classes("q-pa-md").style(
+                with ui.card().classes("q-pa-md col-12 col-md-4").style(
                     f"background-color: {COLORS['surface']}; "
+                    f"border-radius: 12px; "
                     "flex: 1 1 280px; min-width: 280px; max-width: 360px;"
                 ):
                     ui.label(t("content.images")).classes(
@@ -381,32 +382,32 @@ def register() -> None:
 
                     # Image tabs
                     with ui.tabs().classes("full-width q-mb-sm") as img_tabs:
-                        card_tab = ui.tab("生成图卡", icon="auto_awesome")
+                        card_tab = ui.tab(t("content.card_generate"), icon="auto_awesome")
                         upload_tab = ui.tab(t("content.upload_images"), icon="upload_file")
                         websearch_tab = ui.tab(t("content.web_search"), icon="public")
 
                     with ui.tab_panels(img_tabs, value=upload_tab).classes("full-width"):
                         # --- Card Generation tab ---
                         with ui.tab_panel(card_tab):
-                            ui.label("卡片风格").classes("text-caption q-mb-xs")
+                            ui.label(t("content.card_style")).classes("text-caption q-mb-xs")
                             card_style_select = ui.radio(
                                 options={k: v["name"] for k, v in CARD_STYLES.items()},
                                 value="quote",
                             ).classes("q-mb-md")
 
-                            ui.label("标题").classes("text-caption q-mb-xs")
+                            ui.label(t("content.card_title")).classes("text-caption q-mb-xs")
                             card_title_input = ui.input(
-                                placeholder="自动填充或手动输入...",
+                                placeholder=t("content.card_title_placeholder"),
                             ).classes("full-width").props("outlined dense")
 
-                            ui.label("摘要").classes("text-caption q-mb-xs q-mt-sm")
+                            ui.label(t("content.card_summary")).classes("text-caption q-mb-xs q-mt-sm")
                             card_summary_input = ui.textarea(
-                                placeholder="自动填充或手动输入...",
+                                placeholder=t("content.card_summary_placeholder"),
                             ).classes("full-width").props("outlined dense autogrow")
 
-                            ui.label("标签（逗号分隔）").classes("text-caption q-mb-xs q-mt-sm")
+                            ui.label(t("content.card_tags")).classes("text-caption q-mb-xs q-mt-sm")
                             card_tags_input = ui.input(
-                                placeholder="标签1, 标签2, ...",
+                                placeholder=t("content.card_tags_placeholder"),
                             ).classes("full-width").props("outlined dense")
 
                             card_status_label = ui.label("").classes("text-caption q-mt-sm")
@@ -415,19 +416,19 @@ def register() -> None:
                                 title = card_title_input.value.strip()
                                 summary = card_summary_input.value.strip()
                                 if not title:
-                                    ui.notify("请输入标题", type="warning")
+                                    ui.notify(t("content.card_title_required"), type="warning")
                                     return
                                 if not summary:
-                                    ui.notify("请输入摘要", type="warning")
+                                    ui.notify(t("content.card_summary_required"), type="warning")
                                     return
 
                                 tags = [
-                                    t.strip()
-                                    for t in card_tags_input.value.split(",")
-                                    if t.strip()
+                                    tag.strip()
+                                    for tag in card_tags_input.value.split(",")
+                                    if tag.strip()
                                 ]
 
-                                card_status_label.text = "正在生成图卡..."
+                                card_status_label.text = t("content.card_generating")
                                 gen_card_btn.props("loading")
                                 try:
                                     pilot = get_pilot()
@@ -439,26 +440,27 @@ def register() -> None:
                                         platform=platform_select.value,
                                     )
                                     if img_bytes:
-                                        images_dir = _get_images_dir()
+                                        images_dir = get_images_dir()
                                         fname = f"card_{uuid.uuid4().hex[:8]}.png"
                                         fpath = images_dir / fname
                                         fpath.write_bytes(img_bytes)
                                         if str(fpath) not in selected_images:
                                             selected_images.append(str(fpath))
                                         _refresh_image_preview()
-                                        card_status_label.text = "图卡生成成功！"
-                                        ui.notify("图卡已生成", type="positive")
+                                        card_status_label.text = t("content.card_generated")
+                                        ui.notify(t("content.card_added"), type="positive")
                                     else:
-                                        card_status_label.text = "生成失败（检查 AI 配置或 Playwright 安装）"
-                                        ui.notify("图卡生成失败", type="negative")
+                                        card_status_label.text = t("content.card_failed_detail")
+                                        ui.notify(t("content.card_failed"), type="negative")
                                 except Exception as e:
-                                    card_status_label.text = f"错误: {e}"
+                                    card_status_label.text = t("common.error_generic", error=str(e))
+                                    ui.notify(t("common.error_generic", error=str(e)), type="negative")
                                     logger.error("Card generation error: %s", e)
                                 finally:
                                     gen_card_btn.props(remove="loading")
 
                             gen_card_btn = ui.button(
-                                "生成图卡",
+                                t("content.card_generate"),
                                 icon="auto_awesome",
                                 on_click=do_generate_card,
                             ).props("color=primary").classes("q-mt-md")
@@ -466,7 +468,7 @@ def register() -> None:
                         with ui.tab_panel(upload_tab):
                             # Upload area
                             async def handle_upload(e):
-                                images_dir = _get_images_dir()
+                                images_dir = get_images_dir()
                                 fname = f"upload_{uuid.uuid4().hex[:8]}_{e.name}"
                                 fpath = images_dir / fname
                                 fpath.write_bytes(e.content.read())
@@ -474,7 +476,7 @@ def register() -> None:
                                 if fpath not in selected_images:
                                     selected_images.append(str(fpath))
                                 _refresh_image_preview()
-                                ui.notify(f"Uploaded: {e.name}", type="positive")
+                                ui.notify(t("content.uploaded", name=e.name), type="positive")
 
                             ui.upload(
                                 label=t("content.upload_images"),
@@ -508,7 +510,7 @@ def register() -> None:
                                     websearch_results.clear()
                                     with websearch_results:
                                         if not results:
-                                            ui.label(t("common.none")).classes("text-caption text-grey")
+                                            ui.label(t("content.no_results")).classes("text-caption text-grey")
                                         else:
                                             for img_url in results:
                                                 with ui.card().classes("q-pa-xs").style(
@@ -518,12 +520,12 @@ def register() -> None:
                                                         "w-20 h-20 object-cover"
                                                     ).style("border-radius: 6px;")
 
-                                    ui.notify(f"Found {len(results)} images", type="positive")
+                                    ui.notify(t("content.found_images", count=len(results)), type="positive")
 
                                 except Exception as e:
                                     websearch_results.clear()
                                     with websearch_results:
-                                        ui.label(f"{t('common.error')}: {e}").classes("text-caption text-red")
+                                        ui.label(t("common.error_generic", error=str(e))).classes("text-caption text-red")
                                     logger.error("Web search error: %s", e)
 
                             def _add_web_image(url: str):
@@ -552,7 +554,7 @@ def register() -> None:
                         image_preview_container.clear()
                         with image_preview_container:
                             if not selected_images:
-                                ui.label(t("common.none")).classes("text-caption text-grey")
+                                ui.label(t("content.no_images_selected")).classes("text-caption text-grey")
                             else:
                                 for img_path in list(selected_images):
                                     with ui.card().classes("q-pa-xs").style(
@@ -602,7 +604,7 @@ def register() -> None:
                             )
 
                             if not posts:
-                                ui.label("No recent drafts").classes(
+                                ui.label(t("content.no_recent_drafts")).classes(
                                     "text-caption text-grey q-px-md"
                                 )
                             else:
@@ -611,7 +613,7 @@ def register() -> None:
 
                         except Exception as e:
                             logger.error("Failed to load recent drafts: %s", e)
-                            ui.label("Failed to load drafts").classes(
+                            ui.label(t("content.load_drafts_failed")).classes(
                                 "text-caption text-red q-px-md"
                             )
 
@@ -626,7 +628,7 @@ def register() -> None:
                     if tags_str:
                         try:
                             tag_list = json.loads(tags_str)
-                            tags_edit.value = " ".join(f"#{t}" for t in tag_list if t)
+                            tags_edit.value = " ".join(f"#{tag}" for tag in tag_list if tag)
                         except (json.JSONDecodeError, TypeError):
                             tags_edit.value = tags_str
                     else:
@@ -650,7 +652,10 @@ def register() -> None:
                     _refresh_image_preview()
 
                     # Notify user
-                    ui.notify(f"Loaded draft: {post.get('title', 'Untitled')}", type="info")
+                    ui.notify(
+                        t("content.loaded_draft", title=post.get("title", t("common.untitled"))),
+                        type="info",
+                    )
 
                 # Load recent drafts on page load
                 await _refresh_recent_drafts()

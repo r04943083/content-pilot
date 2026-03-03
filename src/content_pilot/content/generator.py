@@ -39,7 +39,7 @@ class ContentGenerator:
             "glm": ("glm_api_key", "CP_AI__GLM_API_KEY"),
         }
         field, env_var = key_map.get(ai.provider, ("", ""))
-        if field and not getattr(ai, field, ""):
+        if field and not getattr(ai, field, "").strip():
             raise RuntimeError(
                 f"{ai.provider.upper()} API key not set. "
                 f"Please set {env_var} in your .env file."

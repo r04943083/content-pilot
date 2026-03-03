@@ -7,6 +7,7 @@ import logging
 from nicegui import app, ui
 
 from content_pilot.gui.constants import COLORS
+from content_pilot.gui.i18n import t
 
 logger = logging.getLogger(__name__)
 
@@ -95,40 +96,45 @@ def nav_drawer() -> ui.left_drawer:
                 "text-h6 text-weight-bold"
             ).style(f"color: {COLORS['primary']};")
 
-        # Navigation items
+        # Navigation items with i18n keys
         items = [
-            ("Dashboard", "dashboard", "/"),
-            ("Accounts", "manage_accounts", "/accounts"),
-            ("Content", "edit_note", "/content"),
-            ("Publish", "publish", "/publish"),
-            ("Schedule", "schedule", "/schedule"),
-            ("Settings", "settings", "/settings"),
+            ("nav.dashboard", "dashboard", "/"),
+            ("nav.accounts", "manage_accounts", "/accounts"),
+            ("nav.content", "edit_note", "/content"),
+            ("nav.publish", "publish", "/publish"),
+            ("nav.schedule", "schedule", "/schedule"),
+            ("nav.settings", "settings", "/settings"),
         ]
 
-        for label, icon, path in items:
+        for i18n_key, icon, path in items:
             is_active = current_path == path
-            active_bg = f"background: {COLORS['primary']};"
-            active_text = f"color: {COLORS['text_primary']};"
-            inactive_style = f"color: {COLORS['text_secondary']};"
+            label = t(i18n_key)
 
-            item_style = (
-                active_bg + active_text
-                if is_active
-                else inactive_style
-            )
+            # Active: left border indicator instead of full background
+            if is_active:
+                item_style = (
+                    f"color: {COLORS['text_primary']}; "
+                    f"border-left: 3px solid {COLORS['primary']}; "
+                    f"background: rgba(99, 102, 241, 0.1);"
+                )
+            else:
+                item_style = (
+                    f"color: {COLORS['text_secondary']}; "
+                    "border-left: 3px solid transparent;"
+                )
 
             with ui.link(target=path).classes(
                 "no-underline full-width q-pa-sm q-pl-md"
             ).style(
                 "display: flex; align-items: center; gap: 12px;"
-                "font-size: 1rem; border-radius: 4px; margin: 2px 8px;"
-                "transition: background 0.2s;"
+                "font-size: 1rem; border-radius: 0 4px 4px 0; margin: 2px 0 2px 0;"
+                "transition: background 0.2s, border-color 0.2s, color 0.2s;"
             ) as link:
                 # Apply active/inactive styles
                 link.style(item_style)
 
                 # Icon color based on state
-                icon_color = COLORS['text_primary'] if is_active else COLORS['text_secondary']
+                icon_color = COLORS['primary'] if is_active else COLORS['text_secondary']
                 ui.icon(icon, size="sm").style(f"color: {icon_color};")
 
                 # Label style based on state

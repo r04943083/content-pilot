@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from content_pilot.analytics import AnalyticsCollector
@@ -238,7 +239,7 @@ class App:
                     status="published",
                     platform_post_id=result.post_id,
                     platform_url=result.url,
-                    published_at="CURRENT_TIMESTAMP",
+                    published_at=datetime.now().isoformat(),
                 )
                 self.rate_limiter.record_publish(platform)
                 await self.browser.save_session(context, platform)

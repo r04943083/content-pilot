@@ -53,7 +53,7 @@ def register() -> None:
 
                 # --- Statistics Summary Row ---
                 with ui.row().classes("full-width q-gutter-md").style(
-                    "display: grid; grid-template-columns: repeat(4, 1fr);"
+                    "display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));"
                 ):
                     stat_card(
                         t("dashboard.total_accounts"),
@@ -93,7 +93,7 @@ def register() -> None:
                         ).style(f"color: {COLORS['text_primary']};")
                         if not accounts:
                             ui.label(
-                                "No accounts configured. Go to Accounts to login."
+                                t("dashboard.no_accounts")
                             ).classes("text-grey")
                         else:
                             with ui.row().classes("q-gutter-md flex-wrap"):
@@ -186,7 +186,7 @@ def register() -> None:
                 ).style(f"color: {COLORS['text_primary']};")
                 if not posts:
                     ui.label(
-                        "No posts yet. Go to Content to generate some."
+                        t("dashboard.no_posts")
                     ).classes("text-grey")
                 else:
                     columns = [
@@ -200,25 +200,25 @@ def register() -> None:
                         },
                         {
                             "name": "title",
-                            "label": "Title",
+                            "label": t("content.title_label"),
                             "field": "title",
                             "sortable": True,
                         },
                         {
                             "name": "platform",
-                            "label": "Platform",
+                            "label": t("content.platform"),
                             "field": "platform",
                             "sortable": True,
                         },
                         {
                             "name": "status",
-                            "label": "Status",
+                            "label": t("common.filter"),
                             "field": "status",
                             "sortable": True,
                         },
                         {
                             "name": "created_at",
-                            "label": "Created",
+                            "label": t("accounts.last_updated"),
                             "field": "created_at",
                             "sortable": True,
                         },
@@ -252,7 +252,7 @@ def register() -> None:
                             {
                                 "id": p["id"],
                                 "thumbnail": thumbnail,
-                                "title": (p.get("title") or "")[:60] or "Untitled",
+                                "title": (p.get("title") or "")[:60] or t("common.untitled"),
                                 "platform": p["platform"],
                                 "status": p["status"],
                                 "status_color": s_color,

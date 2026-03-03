@@ -71,6 +71,9 @@ class BrowserManager:
         if headless is None:
             headless = self._settings.browser.headless
 
+        if self._browser and self._browser.is_connected():
+            await self._browser.close()
+
         self._browser = await self._playwright.chromium.launch(
             headless=headless,
             args=[

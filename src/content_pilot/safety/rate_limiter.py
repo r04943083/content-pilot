@@ -42,16 +42,23 @@ class RateLimiter:
                 f"posts today on {platform}"
             )
 
-        # Check minimum interval
-        bucket = self._get_bucket(platform)
-        elapsed = time.time() - bucket.last_publish_time
-        min_interval = settings.min_interval_minutes * 60
-        if bucket.last_publish_time > 0 and elapsed < min_interval:
-            remaining = int((min_interval - elapsed) / 60)
-            return False, (
-                f"Rate limited: wait {remaining} more minutes "
-                f"(min interval: {settings.min_interval_minutes}min)"
-            )
+        # Check minimum interval using persisted publish time from DB
+        last_post = await self._db.fetch_one(
+            "SELECT published_at FROM posts WHERE platform = ? AND status = 'published' "
+            "ORDER BY published_at DESC LIMIT 1",
+            (platform,),
+        )
+        if last_post and last_post["published_at"]:
+            from datetime import datetime as _dt
+            last_time = _dt.fromisoformat(last_post["published_at"]).timestamp()
+            elapsed = time.time() - last_time
+            min_interval = settings.min_interval_minutes * 60
+            if elapsed < min_interval:
+                remaining = int((min_interval - elapsed) / 60)
+                return False, (
+                    f"Rate limited: wait {remaining} more minutes "
+                    f"(min interval: {settings.min_interval_minutes}min)"
+                )
 
         return True, "OK"
 

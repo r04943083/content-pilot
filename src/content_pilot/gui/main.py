@@ -33,6 +33,47 @@ async def _shutdown() -> None:
     logger.info("Content Pilot app stopped")
 
 
+_GLOBAL_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+body, .nicegui-content {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+.q-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid rgba(255,255,255,0.06);
+}
+
+.q-card:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.15);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+/* Smooth transitions for interactive elements */
+.q-btn, .q-input, .q-select, a {
+    transition: all 0.2s ease;
+}
+</style>
+"""
+
+
 def launch_gui(host: str = "127.0.0.1", port: int = 8080) -> None:
     """Register pages and start NiceGUI."""
     from nicegui import app, ui
@@ -44,6 +85,9 @@ def launch_gui(host: str = "127.0.0.1", port: int = 8080) -> None:
 
     app.on_startup(_startup)
     app.on_shutdown(_shutdown)
+
+    # Add global CSS
+    ui.add_head_html(_GLOBAL_CSS)
 
     # Register page routes
     dashboard.register()

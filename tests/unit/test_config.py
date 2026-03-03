@@ -2,6 +2,8 @@
 
 import os
 
+import pytest
+
 from content_pilot.config.settings import AIConfig, Settings, _deep_merge
 
 
@@ -71,3 +73,58 @@ def test_default_provider_is_qwen():
     """Default provider should be qwen."""
     ai = AIConfig()
     assert ai.provider == "qwen"
+
+
+def test_config_load_with_missing_toml(tmp_path):
+    """Settings.load() works when config files don't exist."""
+    settings = Settings.load(user_config=tmp_path / "nonexistent.toml")
+    assert settings.general.timezone == "Asia/Shanghai"
+
+
+def test_deep_merge_empty_base():
+    result = _deep_merge({}, {"a": 1})
+    assert result == {"a": 1}
+
+
+def test_deep_merge_empty_override():
+    result = _deep_merge({"a": 1}, {})
+    assert result == {"a": 1}
+
+
+def test_deep_merge_nested_override():
+    base = {"a": {"b": {"c": 1, "d": 2}}}
+    override = {"a": {"b": {"c": 99}}}
+    result = _deep_merge(base, override)
+    assert result["a"]["b"]["c"] == 99
+    assert result["a"]["b"]["d"] == 2
+
+
+def test_default_values():
+    """All default values are sensible."""
+    s = Settings()
+    assert s.database.path == "data/content_pilot.db"
+    assert s.browser.headless is False
+    assert s.browser.timeout == 60000
+    assert s.browser.stealth is True
+    assert s.safety.min_interval_minutes == 60
+    assert s.scheduler.coalesce is True
+    assert s.scheduler.max_instances == 1
+    assert s.ai.max_tokens == 2000
+    assert s.ai.temperature == 0.7
+
+
+def test_env_var_override_nested():
+    """Nested env var override with CP_ prefix."""
+    os.environ["CP_SAFETY__MAX_POSTS_PER_DAY"] = "10"
+    try:
+        settings = Settings()
+        assert settings.safety.max_posts_per_day == 10
+    finally:
+        del os.environ["CP_SAFETY__MAX_POSTS_PER_DAY"]
+
+
+def test_invalid_provider_rejected():
+    """Invalid provider value raises validation error."""
+    import pydantic
+    with pytest.raises(pydantic.ValidationError):
+        AIConfig(provider="invalid_provider")
