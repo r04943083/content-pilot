@@ -138,15 +138,8 @@ def nav_drawer() -> ui.left_drawer:
                     "font-weight: " + ("600" if is_active else "400") + ";"
                 )
 
-            # Hover effect via JavaScript
-            link.on(
-                "mouseover",
-                js=f'this.style.background = "{COLORS["primary"]}" if !this.classList.contains("active") else null'
-            )
-            link.on(
-                "mouseout",
-                js=f'this.style.background = "{COLORS["background"]}" if !this.classList.contains("active") else null'
-            )
+            # Hover effect via CSS classes
+            link.classes("hover:bg-primary/20 cursor-pointer")
 
         # Spacer to push language switcher to bottom
         ui.spacer()
