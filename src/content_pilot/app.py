@@ -12,7 +12,7 @@ from content_pilot.analytics import AnalyticsCollector
 from content_pilot.browser import BrowserManager
 from content_pilot.config import get_settings
 from content_pilot.content import ContentGenerator, GeneratedContent
-from content_pilot.content.card_templates import DEFAULT_STYLE_MAP, split_content_for_cards
+from content_pilot.content.card_templates import CARD_STYLES, DEFAULT_STYLE_MAP, split_content_for_cards
 from content_pilot.database import Database
 from content_pilot.platforms import PlatformRegistry
 from content_pilot.platforms.base import PostContent
@@ -145,8 +145,9 @@ class App:
             try:
                 import uuid
 
-                # Get platform-specific card style
-                card_style = DEFAULT_STYLE_MAP.get(platform, "quote")
+                # Rotate card styles for visual variety
+                all_styles = list(CARD_STYLES)
+                base_style = DEFAULT_STYLE_MAP.get(platform, "quote")
 
                 # Split content across cards for variety
                 card_data = split_content_for_cards(
@@ -157,6 +158,13 @@ class App:
                 )
 
                 for i, card_info in enumerate(card_data):
+                    # Rotate styles: first card uses platform default, rest cycle through others
+                    if i == 0:
+                        card_style = base_style
+                    else:
+                        remaining = [s for s in all_styles if s != base_style]
+                        card_style = remaining[(i - 1) % len(remaining)]
+
                     # Use code-generated cards instead of DALL-E
                     img_bytes = await self.generator.generate_image_from_code(
                         title=card_info["title"],
@@ -165,6 +173,7 @@ class App:
                         style=card_style,
                         platform=platform,
                         page_label=card_info["page_label"],
+                        color_index=i,
                     )
                     if img_bytes:
                         # Save to data/images/

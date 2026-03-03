@@ -95,7 +95,7 @@ def register() -> None:
                 with ui.card().classes("q-pa-md col-12 col-md-4").style(
                     f"background-color: {COLORS['surface']}; "
                     f"border-radius: 12px; "
-                    "flex: 1 1 280px; min-width: 280px; max-width: 360px;"
+                    "flex: 1 1 300px; min-width: 300px;"
                 ):
                     ui.label(t("content.generate")).classes(
                         "text-h6 q-mb-md"
@@ -334,7 +334,7 @@ def register() -> None:
                                 _refresh_image_preview()
 
                                 # Refresh recent drafts
-                                _refresh_recent_drafts()
+                                await _refresh_recent_drafts()
 
                             finally:
                                 approve_btn.props(remove="loading")
@@ -377,7 +377,7 @@ def register() -> None:
                 with ui.card().classes("q-pa-md col-12 col-md-4").style(
                     f"background-color: {COLORS['surface']}; "
                     f"border-radius: 12px; "
-                    "flex: 1 1 280px; min-width: 280px; max-width: 360px;"
+                    "flex: 1 1 300px; min-width: 300px;"
                 ):
                     ui.label(t("content.images")).classes(
                         "text-h6 q-mb-md"
@@ -446,6 +446,7 @@ def register() -> None:
                                 card_status_label.text = t("content.card_generating")
                                 gen_card_btn.props("loading")
                                 try:
+                                    import random
                                     pilot = get_pilot()
                                     img_bytes = await pilot.generator.generate_image_from_code(
                                         title=title,
@@ -453,6 +454,7 @@ def register() -> None:
                                         tags=tags,
                                         style=card_style_select.value,
                                         platform=platform_select.value,
+                                        color_index=random.randint(0, 7),
                                     )
                                     if img_bytes:
                                         images_dir = get_images_dir()

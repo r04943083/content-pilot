@@ -169,6 +169,7 @@ class ContentGenerator:
         style: str = "auto",
         platform: str | None = None,
         page_label: str | None = None,
+        color_index: int = 0,
     ) -> bytes | None:
         """
         Generate a card image using AI-written HTML/CSS rendered via Playwright.
@@ -198,6 +199,7 @@ class ContentGenerator:
             tags=tags,
             style=style,
             page_label=page_label,
+            color_index=color_index,
         )
 
     def _parse_response(

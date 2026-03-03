@@ -50,7 +50,12 @@ class RateLimiter:
         )
         if last_post and last_post["published_at"]:
             from datetime import datetime as _dt
-            last_time = _dt.fromisoformat(last_post["published_at"]).timestamp()
+            try:
+                last_time = _dt.fromisoformat(last_post["published_at"]).timestamp()
+            except (ValueError, TypeError):
+                # Skip rate limit check if timestamp is not valid ISO format
+                # (e.g. SQLite literal "CURRENT_TIMESTAMP")
+                return True, "OK"
             elapsed = time.time() - last_time
             min_interval = settings.min_interval_minutes * 60
             if elapsed < min_interval:

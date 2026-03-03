@@ -27,17 +27,21 @@ def clickable_image(src: str, classes: str = "", style: str = "") -> ui.image:
     img.tooltip(t("common.click_to_enlarge"))
 
     def open_lightbox():
-        with ui.dialog() as dialog, ui.card().classes("q-pa-md").style(
-            f"background: {COLORS['surface']}; max-width: 90vw; max-height: 90vh;"
-        ):
-            ui.image(src).style(
-                "max-width: 80vw; max-height: 75vh; object-fit: contain;"
-            )
-            ui.button(
-                t("common.close"),
-                icon="close",
-                on_click=dialog.close,
-            ).props("flat dense").classes("q-mt-sm self-end")
+        with ui.dialog().props("maximized") as dialog:
+            with ui.card().classes("q-pa-none").style(
+                "background: rgba(0,0,0,0.92); width: 100vw; height: 100vh; "
+                "display: flex; flex-direction: column; align-items: center; justify-content: center; "
+                "border-radius: 0; box-shadow: none;"
+            ):
+                ui.button(
+                    icon="close",
+                    on_click=dialog.close,
+                ).props("flat round size=lg").style(
+                    "position: absolute; top: 16px; right: 16px; color: white; z-index: 10;"
+                )
+                ui.image(src).style(
+                    "max-width: 90vw; max-height: 90vh; object-fit: contain;"
+                )
         dialog.open()
 
     img.on("click", lambda: open_lightbox())

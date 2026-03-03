@@ -37,15 +37,19 @@ def register() -> None:
                 total_accounts = len(accounts)
                 today = datetime.now().date()
 
+                def _safe_parse_dt(value) -> datetime | None:
+                    """Safely parse a datetime string, returning None on failure."""
+                    if not value or str(value) == "CURRENT_TIMESTAMP":
+                        return None
+                    try:
+                        return datetime.fromisoformat(str(value))
+                    except (ValueError, TypeError):
+                        return None
+
                 def is_posted_today(p: dict) -> bool:
                     """Check if post was published today."""
-                    try:
-                        pub_date = p.get("published_at")
-                        if not pub_date:
-                            return False
-                        return datetime.fromisoformat(str(pub_date)).date() == today
-                    except (ValueError, TypeError):
-                        return False
+                    dt = _safe_parse_dt(p.get("published_at"))
+                    return dt.date() == today if dt else False
 
                 posts_today = sum(1 for p in posts if is_posted_today(p))
                 pending_review = sum(1 for p in posts if p.get("status") == "approved")
@@ -143,13 +147,8 @@ def register() -> None:
                     counts = []
 
                     def is_created_on_date(p: dict, target_date) -> bool:
-                        try:
-                            created = p.get("created_at")
-                            if not created:
-                                return False
-                            return datetime.fromisoformat(str(created)).date() == target_date
-                        except (ValueError, TypeError):
-                            return False
+                        dt = _safe_parse_dt(p.get("created_at"))
+                        return dt.date() == target_date if dt else False
 
                     for i in range(6, -1, -1):
                         date = today - timedelta(days=i)
@@ -241,12 +240,9 @@ def register() -> None:
 
                         # Format created_at
                         created_at = p.get("created_at", "")
-                        if created_at:
-                            try:
-                                dt = datetime.fromisoformat(created_at)
-                                created_at = dt.strftime("%Y-%m-%d %H:%M")
-                            except ValueError:
-                                pass
+                        dt = _safe_parse_dt(created_at)
+                        if dt:
+                            created_at = dt.strftime("%Y-%m-%d %H:%M")
 
                         rows.append(
                             {

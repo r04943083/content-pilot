@@ -35,18 +35,32 @@ CARD_PROMPT = """你是一个专业的社交媒体视觉设计师。请根据以
 内容摘要：{summary}
 关键标签：{tags}
 卡片风格：{style_name} - {style_description}
+配色方案：{color_scheme}
 
 设计要求：
 1. 输出完整的 HTML 文件，包含内联 CSS（不要用外部样式表）
 2. 固定尺寸：1080x1350 像素（4:5 竖版比例）
 3. 使用中文友好字体：system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif
-4. 配色要有设计感，避免默认蓝黑配色
-5. 适当使用渐变、阴影、圆角等现代设计元素
+4. 严格按照上面指定的配色方案设计，不要使用其他配色
+5. 大量使用渐变、阴影、圆角、装饰图形等现代设计元素
 6. 确保文字清晰可读，对比度足够
 7. 内容要完整显示，不要截断
+8. 每次生成的布局和视觉风格要有变化，避免千篇一律
 
 只输出 HTML 代码，从 <!DOCTYPE html> 开始，不要有任何解释或额外文字：
 """
+
+# Color schemes for variety — rotated per card
+CARD_COLOR_SCHEMES = [
+    "暖橙落日：#FF6B35 → #F7931E → #FFD23F，白色文字",
+    "薄荷清新：#00B09B → #96C93D，白色文字",
+    "浪漫粉紫：#E040FB → #7C4DFF → #536DFE，白色文字",
+    "深海蓝：#0F2027 → #203A43 → #2C5364，浅蓝/白色文字",
+    "蜜桃珊瑚：#FF9A9E → #FECFEF → #FFDDE1，深色文字",
+    "森林绿金：#134E5E → #71B280，金色/白色文字",
+    "极光紫蓝：#7F00FF → #E100FF，白色文字",
+    "暖阳橙红：#FC4A1A → #F7B733，白色文字",
+]
 
 # Fallback HTML template in case AI generation fails
 FALLBACK_TEMPLATE = """<!DOCTYPE html>
@@ -122,6 +136,7 @@ def get_card_prompt(
     tags: list[str],
     style: str = "quote",
     page_label: str | None = None,
+    color_index: int = 0,
 ) -> str:
     """Generate the AI prompt for card generation.
 
@@ -131,9 +146,11 @@ def get_card_prompt(
         tags: List of tags
         style: Card style key
         page_label: Optional page label like "1/4" for multi-card series
+        color_index: Index to select a color scheme for variety
     """
     style_info = CARD_STYLES.get(style, CARD_STYLES["quote"])
     tags_str = ", ".join(f"#{t}" for t in tags) if tags else "无"
+    color_scheme = CARD_COLOR_SCHEMES[color_index % len(CARD_COLOR_SCHEMES)]
 
     prompt = CARD_PROMPT.format(
         title=title,
@@ -141,6 +158,7 @@ def get_card_prompt(
         tags=tags_str,
         style_name=style_info["name"],
         style_description=style_info["description"],
+        color_scheme=color_scheme,
     )
 
     if page_label:
@@ -219,18 +237,40 @@ def split_content_for_cards(
     return cards
 
 
+_FALLBACK_GRADIENTS = [
+    "linear-gradient(135deg, #FF6B35 0%, #F7931E 50%, #FFD23F 100%)",
+    "linear-gradient(135deg, #00B09B 0%, #96C93D 100%)",
+    "linear-gradient(135deg, #E040FB 0%, #7C4DFF 50%, #536DFE 100%)",
+    "linear-gradient(135deg, #0F2027 0%, #203A43 50%, #2C5364 100%)",
+    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    "linear-gradient(135deg, #134E5E 0%, #71B280 100%)",
+    "linear-gradient(135deg, #7F00FF 0%, #E100FF 100%)",
+    "linear-gradient(135deg, #FC4A1A 0%, #F7B733 100%)",
+]
+
+
 def get_fallback_html(
     title: str,
     summary: str,
     tags: list[str],
+    color_index: int = 0,
 ) -> str:
     """Generate fallback HTML when AI generation fails."""
+    import random
+
     tags_html = "\n".join(
         f'<span class="tag">#{tag}</span>' for tag in tags[:5]
     ) if tags else ""
 
-    return FALLBACK_TEMPLATE.format(
+    gradient = _FALLBACK_GRADIENTS[color_index % len(_FALLBACK_GRADIENTS)]
+
+    html = FALLBACK_TEMPLATE.format(
         title=title[:50] if len(title) > 50 else title,
         summary=summary[:200] if len(summary) > 200 else summary,
         tags_html=tags_html,
+    )
+    # Replace the default gradient with the selected one
+    return html.replace(
+        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        gradient,
     )
