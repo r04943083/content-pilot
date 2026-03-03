@@ -27,8 +27,7 @@ def register() -> None:
             "full-width q-pa-md"
         ).style("max-width: 1200px; margin: auto;"):
 
-            @ui.refreshable
-            async def data_section():
+            async def load_dashboard():
                 pilot = get_pilot()
                 accounts = await pilot.db.get_all_accounts()
                 posts = await pilot.db.get_posts(limit=20)
@@ -81,7 +80,7 @@ def register() -> None:
 
                 # --- Account Overview + Quick Actions Row ---
                 with ui.row().classes("q-gutter-lg q-mt-lg").style(
-                    "align-items: flex-start;"
+                    "align-items: stretch;"
                 ):
                     # Account Overview
                     with ui.column().classes("full-width").style("flex: 1; min-width: 0;"):
@@ -286,7 +285,4 @@ def register() -> None:
                         """
                     )
 
-            await data_section()
-
-            # Auto-refresh data every 30 seconds (no full page reload)
-            ui.timer(30.0, data_section.refresh)
+            await load_dashboard()

@@ -365,6 +365,7 @@ def register() -> None:
                     # Image tabs
                     with ui.tabs().classes("full-width q-mb-sm") as img_tabs:
                         upload_tab = ui.tab(t("content.upload_images"), icon="upload_file")
+                        websearch_tab = ui.tab(t("content.web_search"), icon="public")
 
                     with ui.tab_panels(img_tabs, value=upload_tab).classes("full-width"):
                         with ui.tab_panel(upload_tab):
@@ -386,6 +387,62 @@ def register() -> None:
                                 auto_upload=True,
                                 multiple=True,
                             ).classes("full-width").props('accept="image/*"')
+
+                        with ui.tab_panel(websearch_tab):
+                            # Web Search area
+                            websearch_input = ui.input(
+                                placeholder=t("content.search_placeholder"),
+                            ).classes("full-width q-mb-sm").props("outlined dense")
+
+                            websearch_results = ui.row().classes("q-gutter-sm flex-wrap")
+
+                            async def do_websearch():
+                                query = websearch_input.value.strip()
+                                if not query:
+                                    ui.notify(t("content.search_placeholder"), type="warning")
+                                    return
+
+                                websearch_results.clear()
+                                with websearch_results:
+                                    ui.label(t("content.searching")).classes("text-caption")
+
+                                try:
+                                    pilot = get_pilot()
+                                    # Use Unsplash search
+                                    results = await pilot.image.search_unsplash(query, count=9)
+
+                                    websearch_results.clear()
+                                    with websearch_results:
+                                        if not results:
+                                            ui.label(t("common.none")).classes("text-caption text-grey")
+                                        else:
+                                            for img_url in results:
+                                                with ui.card().classes("q-pa-xs").style(
+                                                    "border-radius: 8px; cursor: pointer;"
+                                                ).on("click", lambda url=img_url: _add_web_image(url)):
+                                                    ui.image(img_url).classes(
+                                                        "w-20 h-20 object-cover"
+                                                    ).style("border-radius: 6px;")
+
+                                    ui.notify(f"Found {len(results)} images", type="positive")
+
+                                except Exception as e:
+                                    websearch_results.clear()
+                                    with websearch_results:
+                                        ui.label(f"{t('common.error')}: {e}").classes("text-caption text-red")
+                                    logger.error("Web search error: %s", e)
+
+                            def _add_web_image(url: str):
+                                if url not in selected_images:
+                                    selected_images.append(url)
+                                    _refresh_image_preview()
+                                    ui.notify(t("content.image_added"), type="positive")
+
+                            ui.button(
+                                t("content.search"),
+                                icon="search",
+                                on_click=do_websearch,
+                            ).props("color=primary")
 
                     # Selected images preview
                     ui.separator().classes("q-my-md")

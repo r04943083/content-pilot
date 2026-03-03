@@ -70,30 +70,30 @@ def _render_platform_card(
     with ui.card().classes("q-pa-lg").style(
         f"flex: 1 1 280px; min-width: 280px; "
         f"background: {COLORS['surface']}; "
-        f"border-left: 5px solid {p_color}; "
-        "border-radius: 16px;"
+        f"border-left: 4px solid {p_color}; "
+        "border-radius: 12px;"
     ):
         with ui.column().classes("full-width q-gutter-sm"):
             # Header row: avatar/icon + platform name + status
             with ui.row().classes("items-center q-gutter-md no-wrap"):
-                # Avatar or Icon with larger size
+                # Avatar or Icon with unified size
                 if acc and acc.get("avatar_url"):
                     ui.image(acc["avatar_url"]).classes(
                         "q-mr-sm"
                     ).style(
-                        f"width: 72px; height: 72px; "
+                        f"width: 56px; height: 56px; "
                         "border-radius: 50%; object-fit: cover; "
-                        f"border: 3px solid {p_color};"
+                        f"border: 2px solid {p_color};"
                     )
                 else:
                     with ui.column().classes(
                         "items-center justify-center"
                     ).style(
-                        f"width: 72px; min-width: 72px; height: 72px; "
+                        f"width: 56px; min-width: 56px; height: 56px; "
                         f"background: {p_color}20; border-radius: 50%; "
-                        f"border: 3px solid {p_color};"
+                        f"border: 2px solid {p_color};"
                     ):
-                        ui.icon(icon, size="2.5rem").style(f"color: {p_color};")
+                        ui.icon(icon, size="2rem").style(f"color: {p_color};")
 
                 with ui.column().classes("q-gutter-xs"):
                     # Platform name

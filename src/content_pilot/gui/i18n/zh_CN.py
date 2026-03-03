@@ -67,6 +67,10 @@ TRANSLATIONS = {
         "generated": "已生成",
         "upload_images": "上传图片",
         "selected_images": "已选图片",
+        "web_search": "网络搜索",
+        "search_placeholder": "搜索图片...",
+        "searching": "搜索中...",
+        "image_added": "图片已添加",
     },
     "publish": {
         "title": "发布管理",

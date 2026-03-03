@@ -27,6 +27,10 @@ def register() -> None:
 
         pilot = get_pilot()
 
+        # State variables - must be defined before use in button styles
+        view_state = {"view": "list"}
+        selected_posts = set()
+
         with ui.column().classes(
             "full-width q-pa-md"
         ).style("max-width: 1400px; margin: auto;"):
@@ -108,9 +112,6 @@ def register() -> None:
             # Content containers
             list_container = ui.column().classes("full-width")
             kanban_container = ui.row().classes("full-width q-gutter-md")
-
-            view_state = {"view": "list"}
-            selected_posts = set()
 
             def _set_view(view: str):
                 view_state["view"] = view

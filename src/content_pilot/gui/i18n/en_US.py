@@ -65,6 +65,10 @@ TRANSLATIONS = {
         "generated": "Generated",
         "upload_images": "Upload Images",
         "selected_images": "Selected Images",
+        "web_search": "Web Search",
+        "search_placeholder": "Search for images...",
+        "searching": "Searching...",
+        "image_added": "Image added",
     },
     "publish": {
         "title": "Publish Management",

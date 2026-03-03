@@ -29,7 +29,7 @@ def account_card(account: dict) -> ui.card:
     with ui.card().classes("q-pa-md").style(
         f"background: {COLORS['surface']}; "
         f"border-left: 4px solid {p_color}; "
-        "flex: 1 1 200px; min-width: 200px; border-radius: 8px;"
+        "flex: 1 1 200px; min-width: 200px; border-radius: 12px;"
     ) as card:
         with ui.row().classes("items-center q-gutter-sm"):
             # Avatar or icon
@@ -37,13 +37,13 @@ def account_card(account: dict) -> ui.card:
                 ui.image(account["avatar_url"]).classes(
                     "q-pa-xs"
                 ).style(
-                    "width: 48px; height: 48px; "
+                    "width: 56px; height: 56px; "
                     "border-radius: 50%; object-fit: cover;"
                 )
             else:
                 ui.icon(icon).style(
-                    f"color: {p_color}; font-size: 40px; "
-                    "width: 40px; height: 40px;"
+                    f"color: {p_color}; font-size: 48px; "
+                    "width: 48px; height: 48px;"
                 )
 
             with ui.column().classes("q-gutter-xs"):
