@@ -14,6 +14,7 @@ AI-driven social media automation tool for Chinese platforms.
 
 - **Multi-platform support**: Xiaohongshu, Douyin, Bilibili, Weibo
 - **AI content generation**: Qwen, GLM, OpenAI, Claude — with platform-optimized prompts
+- **Web GUI**: Browser-based dashboard for managing accounts, content, publishing, and schedules
 - **QR code login**: Scan-to-login for all platforms with session persistence
 - **Scheduled publishing**: Cron-based scheduling with optimal posting times
 - **Analytics tracking**: Views, likes, comments, follower growth trends
@@ -93,6 +94,9 @@ content-pilot analytics summary
 content-pilot schedule add --name "Daily Post" --platform xiaohongshu \
   --topic "Python Tips" --cron "0 20 * * *"
 content-pilot run   # start the scheduling daemon
+
+# Or use the Web GUI for a visual interface
+content-pilot gui
 ```
 
 > **Workflow**: `login` → `generate` (AI draft) → `approve` → `publish` (post to platform).
@@ -110,6 +114,7 @@ content-pilot run   # start the scheduling daemon
 | `analytics summary\|growth\|post\|export` | View analytics |
 | `config show\|validate` | Configuration management |
 | `run` | Start scheduling daemon |
+| `gui` | Launch web GUI (default: http://127.0.0.1:8080) |
 
 ### Content Styles
 
@@ -132,14 +137,16 @@ Configuration uses three layers (later overrides earlier):
 ### Architecture
 
 ```
-CLI (Click) → App Orchestrator → Platform Connectors (Playwright)
-                ↓                        ↓
-         Content Generator          Browser Manager
-         (Qwen/GLM/OpenAI/Claude)  (Stealth + Sessions)
-                ↓                        ↓
-         Scheduler (APScheduler)    SQLite Database
-                ↓
-         Safety (Rate Limiter + Validator)
+CLI (Click) / Web GUI (NiceGUI)
+         ↓
+  App Orchestrator → Platform Connectors (Playwright)
+         ↓                        ↓
+  Content Generator          Browser Manager
+  (Qwen/GLM/OpenAI/Claude)  (Stealth + Sessions)
+         ↓                        ↓
+  Scheduler (APScheduler)    SQLite Database
+         ↓
+  Safety (Rate Limiter + Validator)
 ```
 
 ---
@@ -152,6 +159,7 @@ CLI (Click) → App Orchestrator → Platform Connectors (Playwright)
 
 - **多平台支持**: 小红书、抖音、B站、微博
 - **AI 内容生成**: 千问、智谱 GLM、OpenAI、Claude，针对各平台优化的 prompt
+- **可视化界面**: 基于浏览器的 Web GUI，管理账号、内容、发布和定时任务
 - **扫码登录**: 所有平台支持扫码登录，会话持久化
 - **定时发布**: 基于 Cron 的定时调度，内置最佳发布时间建议
 - **数据分析**: 浏览、点赞、评论、粉丝增长趋势
@@ -231,6 +239,9 @@ content-pilot analytics summary
 content-pilot schedule add --name "每日发帖" --platform xiaohongshu \
   --topic "Python技巧" --cron "0 20 * * *"
 content-pilot run   # 启动定时守护进程
+
+# 或者使用可视化界面
+content-pilot gui
 ```
 
 > **完整流程**：`login`(登录) → `generate`(AI生成草稿) → `approve`(审核通过) → `publish`(发布到平台)

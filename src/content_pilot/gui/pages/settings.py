@@ -22,112 +22,137 @@ def register() -> None:
 
         settings = get_settings()
 
-        # --- AI Provider settings ---
-        ui.label("AI Provider").classes("text-h6 q-mt-md q-mb-sm")
-        with ui.card().classes("q-pa-md full-width"):
-            provider_select = ui.select(
-                PROVIDERS, value=settings.ai.provider, label="Provider"
-            ).classes("full-width")
+        with ui.column().classes(
+            "full-width q-pa-md"
+        ).style("max-width: 1200px; margin: auto;"):
+            # --- AI Provider settings ---
+            ui.label("AI Provider").classes("text-h6 q-mb-sm")
+            with ui.card().classes("q-pa-md full-width"):
+                provider_select = ui.select(
+                    PROVIDERS,
+                    value=settings.ai.provider,
+                    label="Provider",
+                ).classes("full-width").props("outlined")
 
-            anthropic_key = ui.input(
-                "Anthropic API Key",
-                value=settings.ai.anthropic_api_key,
-                password=True,
-                password_toggle_button=True,
-            ).classes("full-width")
-            openai_key = ui.input(
-                "OpenAI API Key",
-                value=settings.ai.openai_api_key,
-                password=True,
-                password_toggle_button=True,
-            ).classes("full-width")
-            qwen_key = ui.input(
-                "Qwen API Key",
-                value=settings.ai.qwen_api_key,
-                password=True,
-                password_toggle_button=True,
-            ).classes("full-width")
-            glm_key = ui.input(
-                "GLM API Key",
-                value=settings.ai.glm_api_key,
-                password=True,
-                password_toggle_button=True,
-            ).classes("full-width")
+                anthropic_key = ui.input(
+                    "Anthropic API Key",
+                    value=settings.ai.anthropic_api_key,
+                    password=True,
+                    password_toggle_button=True,
+                ).classes("full-width").props("outlined")
+                openai_key = ui.input(
+                    "OpenAI API Key",
+                    value=settings.ai.openai_api_key,
+                    password=True,
+                    password_toggle_button=True,
+                ).classes("full-width").props("outlined")
+                qwen_key = ui.input(
+                    "Qwen API Key",
+                    value=settings.ai.qwen_api_key,
+                    password=True,
+                    password_toggle_button=True,
+                ).classes("full-width").props("outlined")
+                glm_key = ui.input(
+                    "GLM API Key",
+                    value=settings.ai.glm_api_key,
+                    password=True,
+                    password_toggle_button=True,
+                ).classes("full-width").props("outlined")
 
-        # --- Model settings ---
-        ui.label("Model Settings").classes("text-h6 q-mt-lg q-mb-sm")
-        with ui.card().classes("q-pa-md full-width"):
-            claude_model = ui.input("Claude Model", value=settings.ai.claude_model).classes(
-                "full-width"
+            # --- Model settings ---
+            ui.label("Model Settings").classes(
+                "text-h6 q-mt-lg q-mb-sm"
             )
-            openai_model = ui.input("OpenAI Model", value=settings.ai.openai_model).classes(
-                "full-width"
-            )
-            qwen_model = ui.input("Qwen Model", value=settings.ai.qwen_model).classes(
-                "full-width"
-            )
-            glm_model = ui.input("GLM Model", value=settings.ai.glm_model).classes("full-width")
-            temperature = ui.slider(min=0, max=2, step=0.1, value=settings.ai.temperature).classes(
-                "full-width"
-            )
-            ui.label().bind_text_from(temperature, "value", backward=lambda v: f"Temperature: {v}")
-            max_tokens = ui.number(
-                "Max Tokens", value=settings.ai.max_tokens, min=100, max=8000, step=100
-            ).classes("full-width")
-
-        # --- Safety settings ---
-        ui.label("Safety").classes("text-h6 q-mt-lg q-mb-sm")
-        with ui.card().classes("q-pa-md full-width"):
-            require_review = ui.switch(
-                "Require review before publishing", value=settings.safety.require_review
-            )
-            max_posts = ui.number(
-                "Max posts per day",
-                value=settings.safety.max_posts_per_day,
-                min=1,
-                max=50,
-                step=1,
-            ).classes("full-width")
-            min_interval = ui.number(
-                "Min interval (minutes)",
-                value=settings.safety.min_interval_minutes,
-                min=1,
-                max=1440,
-                step=1,
-            ).classes("full-width")
-
-        # --- Save ---
-        async def do_save():
-            try:
-                _save_env(
-                    provider=provider_select.value,
-                    anthropic_key=anthropic_key.value,
-                    openai_key=openai_key.value,
-                    qwen_key=qwen_key.value,
-                    glm_key=glm_key.value,
+            with ui.card().classes("q-pa-md full-width"):
+                claude_model = ui.input(
+                    "Claude Model", value=settings.ai.claude_model
+                ).classes("full-width").props("outlined")
+                openai_model = ui.input(
+                    "OpenAI Model", value=settings.ai.openai_model
+                ).classes("full-width").props("outlined")
+                qwen_model = ui.input(
+                    "Qwen Model", value=settings.ai.qwen_model
+                ).classes("full-width").props("outlined")
+                glm_model = ui.input(
+                    "GLM Model", value=settings.ai.glm_model
+                ).classes("full-width").props("outlined")
+                temperature = ui.slider(
+                    min=0, max=2, step=0.1, value=settings.ai.temperature
+                ).classes("full-width")
+                ui.label().bind_text_from(
+                    temperature,
+                    "value",
+                    backward=lambda v: f"Temperature: {v}",
                 )
-                _save_config(
-                    provider=provider_select.value,
-                    claude_model=claude_model.value,
-                    openai_model=openai_model.value,
-                    qwen_model=qwen_model.value,
-                    glm_model=glm_model.value,
-                    temperature=temperature.value,
-                    max_tokens=int(max_tokens.value),
-                    require_review=require_review.value,
-                    max_posts_per_day=int(max_posts.value),
-                    min_interval_minutes=int(min_interval.value),
-                )
-                # Clear settings cache so next access picks up new values
-                get_settings.cache_clear()
-                ui.notify("Settings saved! Restart may be needed for full effect.", type="positive")
-            except Exception as e:
-                ui.notify(f"Error saving: {e}", type="negative")
-                logger.error("Settings save error: %s", e)
+                max_tokens = ui.number(
+                    "Max Tokens",
+                    value=settings.ai.max_tokens,
+                    min=100,
+                    max=8000,
+                    step=100,
+                ).classes("full-width").props("outlined")
 
-        ui.button("Save Settings", icon="save", on_click=do_save).props(
-            "color=primary"
-        ).classes("q-mt-lg")
+            # --- Safety settings ---
+            ui.label("Safety").classes("text-h6 q-mt-lg q-mb-sm")
+            with ui.card().classes("q-pa-md full-width"):
+                require_review = ui.switch(
+                    "Require review before publishing",
+                    value=settings.safety.require_review,
+                )
+                max_posts = ui.number(
+                    "Max posts per day",
+                    value=settings.safety.max_posts_per_day,
+                    min=1,
+                    max=50,
+                    step=1,
+                ).classes("full-width").props("outlined")
+                min_interval = ui.number(
+                    "Min interval (minutes)",
+                    value=settings.safety.min_interval_minutes,
+                    min=1,
+                    max=1440,
+                    step=1,
+                ).classes("full-width").props("outlined")
+
+            # --- Save ---
+            async def do_save():
+                save_btn.props("loading")
+                try:
+                    _save_env(
+                        provider=provider_select.value,
+                        anthropic_key=anthropic_key.value,
+                        openai_key=openai_key.value,
+                        qwen_key=qwen_key.value,
+                        glm_key=glm_key.value,
+                    )
+                    _save_config(
+                        provider=provider_select.value,
+                        claude_model=claude_model.value,
+                        openai_model=openai_model.value,
+                        qwen_model=qwen_model.value,
+                        glm_model=glm_model.value,
+                        temperature=temperature.value,
+                        max_tokens=int(max_tokens.value),
+                        require_review=require_review.value,
+                        max_posts_per_day=int(max_posts.value),
+                        min_interval_minutes=int(min_interval.value),
+                    )
+                    get_settings.cache_clear()
+                    ui.notify(
+                        "Settings saved! Restart may be needed for full effect.",
+                        type="positive",
+                    )
+                except Exception as e:
+                    ui.notify(
+                        f"Error saving: {e}", type="negative"
+                    )
+                    logger.error("Settings save error: %s", e)
+                finally:
+                    save_btn.props(remove="loading")
+
+            save_btn = ui.button(
+                "Save Settings", icon="save", on_click=do_save
+            ).props("color=primary").classes("q-mt-lg")
 
 
 def _save_env(

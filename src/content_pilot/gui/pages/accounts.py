@@ -7,11 +7,10 @@ import logging
 from nicegui import ui
 
 from content_pilot.gui.components.nav import page_layout
+from content_pilot.gui.constants import PLATFORM_COLORS, PLATFORM_ICONS, PLATFORMS
 from content_pilot.gui.main import get_pilot
 
 logger = logging.getLogger(__name__)
-
-PLATFORMS = ["xiaohongshu", "douyin", "bilibili", "weibo"]
 
 
 def register() -> None:
@@ -29,35 +28,57 @@ def register() -> None:
             if log_area:
                 log_area.push(msg)
 
-        ui.label("Platform Accounts").classes("text-h6 q-mt-md q-mb-sm")
+        with ui.column().classes(
+            "full-width q-pa-md"
+        ).style("max-width: 1200px; margin: auto;"):
+            ui.label("Platform Accounts").classes("text-h6 q-mb-sm")
 
-        with ui.row().classes("q-gutter-md flex-wrap"):
-            for platform in PLATFORMS:
-                acc = account_map.get(platform)
-                with ui.card().classes("q-pa-md").style("min-width: 280px;"):
-                    ui.label(platform.capitalize()).classes("text-h6 text-capitalize")
-                    if acc:
-                        color = "green" if acc["login_state"] == "active" else "red"
-                        ui.badge(acc["login_state"], color=color)
-                        ui.label(f"User: {acc['nickname'] or acc['username']}")
-                        ui.label(f"Followers: {acc['follower_count']}")
-                        ui.label(f"Updated: {acc['updated_at'] or 'N/A'}").classes(
-                            "text-caption text-grey"
-                        )
-                    else:
-                        ui.label("Not logged in").classes("text-grey")
+            with ui.row().classes("q-gutter-md flex-wrap"):
+                for platform in PLATFORMS:
+                    acc = account_map.get(platform)
+                    icon = PLATFORM_ICONS.get(platform, "person")
+                    p_color = PLATFORM_COLORS.get(platform, "#666")
+                    with ui.card().classes("q-pa-md").style(
+                        f"min-width: 280px; border-top: 3px solid {p_color};"
+                    ):
+                        with ui.row().classes("items-center q-gutter-sm"):
+                            ui.icon(icon).style(f"color: {p_color};")
+                            ui.label(platform.capitalize()).classes(
+                                "text-h6 text-capitalize"
+                            )
+                        if acc:
+                            color = (
+                                "green"
+                                if acc["login_state"] == "active"
+                                else "red"
+                            )
+                            ui.badge(acc["login_state"], color=color)
+                            ui.label(
+                                f"User: {acc['nickname'] or acc['username']}"
+                            )
+                            ui.label(f"Followers: {acc['follower_count']}")
+                            ui.label(
+                                f"Updated: {acc['updated_at'] or 'N/A'}"
+                            ).classes("text-caption text-grey")
+                        else:
+                            ui.label("Not logged in").classes("text-grey")
 
-                    with ui.row().classes("q-mt-sm q-gutter-sm"):
-                        _make_login_btn(platform, append_log)
-                        _make_check_btn(platform, append_log)
+                        with ui.row().classes("q-mt-sm q-gutter-sm"):
+                            _make_login_btn(platform, append_log)
+                            _make_check_btn(platform, append_log)
 
-        ui.label("Operation Log").classes("text-h6 q-mt-lg q-mb-sm")
-        log_area = ui.log(max_lines=50).classes("full-width").style("height: 200px;")
+            ui.label("Operation Log").classes("text-h6 q-mt-lg q-mb-sm")
+            log_area = ui.log(max_lines=50).classes("full-width").style(
+                "height: 200px;"
+            )
 
 
 def _make_login_btn(platform: str, append_log):
     async def do_login():
-        append_log(f"Logging in to {platform}... (check for browser popup)")
+        btn.props("loading")
+        append_log(
+            f"Logging in to {platform}... (check for browser popup)"
+        )
         try:
             pilot = get_pilot()
             ok = await pilot.login(platform)
@@ -67,13 +88,18 @@ def _make_login_btn(platform: str, append_log):
                 append_log(f"Login to {platform} failed.")
         except Exception as e:
             append_log(f"Login error: {e}")
+        finally:
+            btn.props(remove="loading")
         ui.navigate.to("/accounts")
 
-    ui.button("Login", icon="login", on_click=do_login).props("color=primary")
+    btn = ui.button("Login", icon="login", on_click=do_login).props(
+        "color=primary outline"
+    )
 
 
 def _make_check_btn(platform: str, append_log):
     async def do_check():
+        btn.props("loading")
         append_log(f"Checking session for {platform}...")
         try:
             pilot = get_pilot()
@@ -86,12 +112,16 @@ def _make_check_btn(platform: str, append_log):
                 if valid:
                     append_log(f"{platform}: session is valid")
                 else:
-                    append_log(f"{platform}: session expired, please login again")
+                    append_log(
+                        f"{platform}: session expired, please login again"
+                    )
             finally:
                 await context.close()
         except Exception as e:
             append_log(f"Check error: {e}")
+        finally:
+            btn.props(remove="loading")
 
-    ui.button("Check Session", icon="verified_user", on_click=do_check).props(
-        "color=secondary outline"
-    )
+    btn = ui.button(
+        "Check Session", icon="verified_user", on_click=do_check
+    ).props("color=secondary outline")

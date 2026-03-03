@@ -69,19 +69,27 @@ class TestImageHelpers:
             assert "unsplash" in url
             assert "nature" in url
 
-    def test_ensure_images_dir(self, tmp_path, monkeypatch):
+    def test_get_images_dir(self, tmp_path, monkeypatch):
         from content_pilot.gui.components import image_picker
 
-        test_dir = tmp_path / "images"
-        monkeypatch.setattr(image_picker, "IMAGES_DIR", test_dir)
-        result = image_picker._ensure_images_dir()
-        assert result == test_dir
-        assert test_dir.exists()
+        test_dir = tmp_path / "data"
+        # Patch get_settings to return a mock with data_dir pointing to tmp
+        from unittest.mock import MagicMock
+
+        mock_settings = MagicMock()
+        mock_settings.general.data_dir = str(test_dir)
+        monkeypatch.setattr(image_picker, "get_settings", lambda: mock_settings)
+        result = image_picker._get_images_dir()
+        assert result == test_dir / "images"
+        assert result.exists()
 
     @pytest.mark.asyncio
     async def test_download_image_bad_url(self, tmp_path, monkeypatch):
         from content_pilot.gui.components import image_picker
+        from unittest.mock import MagicMock
 
-        monkeypatch.setattr(image_picker, "IMAGES_DIR", tmp_path / "images")
+        mock_settings = MagicMock()
+        mock_settings.general.data_dir = str(tmp_path / "data")
+        monkeypatch.setattr(image_picker, "get_settings", lambda: mock_settings)
         result = await image_picker.download_image("http://invalid.test/no-image.jpg")
         assert result is None
