@@ -82,13 +82,13 @@ def register() -> None:
             "full-width q-pa-md"
         ).style("max-width: 1400px; margin: auto;"):
 
-            # --- 3-Column Layout ---
-            with ui.row().classes("full-width q-gutter-md items-start"):
+            # --- Responsive Column Layout ---
+            with ui.row().classes("full-width q-gutter-md items-start flex-wrap"):
 
                 # --- Left: Generation Form ---
                 with ui.card().classes("q-pa-md").style(
                     f"background-color: {COLORS['surface']}; "
-                    "flex: 0 0 320px; min-width: 320px;"
+                    "flex: 1 1 280px; min-width: 280px; max-width: 360px;"
                 ):
                     ui.label(t("content.generate")).classes(
                         "text-h6 q-mb-md"
@@ -199,7 +199,7 @@ def register() -> None:
                 # --- Center: Preview/Edit ---
                 with ui.card().classes("q-pa-md").style(
                     f"background-color: {COLORS['surface']}; "
-                    "flex: 1; min-width: 400px;"
+                    "flex: 2 1 320px; min-width: 320px;"
                 ):
                     ui.label(t("content.preview_edit")).classes(
                         "text-h6 q-mb-md"
@@ -232,8 +232,8 @@ def register() -> None:
                             platform = platform_select.value
                             platform_preview.text = f"Target: {platform} | Style: {style_select.value}"
 
-                        platform_select.bind.value(lambda: update_platform_preview())
-                        style_select.bind.value(lambda: update_platform_preview())
+                        platform_select.on_value_change(lambda e: update_platform_preview())
+                        style_select.on_value_change(lambda e: update_platform_preview())
                         update_platform_preview()
 
                     # Action buttons
@@ -344,7 +344,7 @@ def register() -> None:
                 # --- Right: Image Area ---
                 with ui.card().classes("q-pa-md").style(
                     f"background-color: {COLORS['surface']}; "
-                    "flex: 0 0 320px; min-width: 320px;"
+                    "flex: 1 1 280px; min-width: 280px; max-width: 360px;"
                 ):
                     ui.label(t("content.images")).classes(
                         "text-h6 q-mb-md"

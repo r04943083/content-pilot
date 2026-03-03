@@ -21,7 +21,7 @@ def post_card(
     p_color = PLATFORM_COLORS.get(platform, "#666")
 
     with ui.card().classes("q-pa-md").style(
-        f"min-width: 320px; max-width: 400px; background: {COLORS['surface']}; "
+        f"flex: 1 1 280px; min-width: 280px; max-width: 100%; background: {COLORS['surface']}; "
         f"border-left: 4px solid {p_color}; border-radius: 8px;"
     ):
         # Thumbnail area

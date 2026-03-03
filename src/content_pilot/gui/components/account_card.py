@@ -29,7 +29,7 @@ def account_card(account: dict) -> ui.card:
     with ui.card().classes("q-pa-md").style(
         f"background: {COLORS['surface']}; "
         f"border-left: 4px solid {p_color}; "
-        "min-width: 220px; border-radius: 8px;"
+        "flex: 1 1 200px; min-width: 200px; border-radius: 8px;"
     ) as card:
         with ui.row().classes("items-center q-gutter-sm"):
             # Avatar or icon

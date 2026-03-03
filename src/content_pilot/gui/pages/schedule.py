@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 from apscheduler.triggers.cron import CronTrigger
 from nicegui import ui
 
-from content_pilot.gui.components.nav import set_active_nav
+from content_pilot.gui.components.nav import page_layout, set_active_nav
 from content_pilot.gui.constants import COLORS, PLATFORMS, STYLES
 from content_pilot.gui.i18n import t
 from content_pilot.gui.main import get_pilot
@@ -97,6 +97,8 @@ def register() -> None:
     @ui.page("/schedule")
     async def schedule_page():
         set_active_nav("/schedule")
+        page_layout(t("schedule.title"))
+
         pilot = get_pilot()
 
         # State variables
@@ -300,7 +302,7 @@ def register() -> None:
                             with ui.card().classes("q-pa-md").style(
                                 f"background: {COLORS['surface']}; "
                                 f"border-left: 4px solid {COLORS['accent'] if s.get('enabled') else COLORS['warning']}; "
-                                "min-width: 300px; border-radius: 12px;"
+                                "flex: 1 1 280px; min-width: 280px; border-radius: 12px;"
                             ):
                                 with ui.row().classes("items-center justify-between"):
                                     ui.label(s["name"]).classes(

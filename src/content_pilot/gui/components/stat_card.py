@@ -28,7 +28,7 @@ def stat_card(
     """
     with ui.card().classes("q-pa-md").style(
         f"background: {COLORS['surface']}; "
-        "min-width: 180px; border-radius: 12px;"
+        "flex: 1 1 140px; min-width: 140px; border-radius: 12px;"
     ) as card:
         with ui.row().classes("items-center q-gutter-sm"):
             ui.icon(icon, size="md").style(

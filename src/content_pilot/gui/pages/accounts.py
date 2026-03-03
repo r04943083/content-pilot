@@ -23,6 +23,7 @@ def register() -> None:
     @ui.page("/accounts")
     async def accounts_page():
         set_active_nav("/accounts")
+        page_layout(t("accounts.title"))
 
         pilot = get_pilot()
         accounts = await pilot.db.get_all_accounts()
@@ -67,7 +68,7 @@ def _render_platform_card(
 ) -> None:
     """Render a platform account card with the new design system."""
     with ui.card().classes("q-pa-lg").style(
-        f"min-width: 340px; flex: 1 1 340px; "
+        f"flex: 1 1 280px; min-width: 280px; "
         f"background: {COLORS['surface']}; "
         f"border-left: 5px solid {p_color}; "
         "border-radius: 16px;"

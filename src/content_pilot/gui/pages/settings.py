@@ -21,6 +21,7 @@ def register() -> None:
     @ui.page("/settings")
     async def settings_page():
         set_active_nav("/settings")
+        page_layout(t("settings.title"))
 
         settings = get_settings()
 
