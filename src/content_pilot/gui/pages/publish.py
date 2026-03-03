@@ -61,15 +61,17 @@ def register() -> None:
 
             # Filter controls
             with ui.row().classes("q-gutter-md items-center q-mb-md"):
+                platform_options = {"all": t("publish.all")}
+                platform_options.update({p: p.capitalize() for p in PLATFORMS})
                 filter_platform = ui.select(
-                    [{"value": "all", "label": t("publish.all")}] +
-                    [{"value": p, "label": p.capitalize()} for p in PLATFORMS],
+                    platform_options,
                     value="all", label=t("publish.filter_platform")
                 ).style("min-width: 150px;").props("outlined dark")
 
+                status_options = {"all": t("publish.all")}
+                status_options.update({s: t(f"status.{s}") for s in ["draft", "approved", "scheduled", "published", "failed"]})
                 filter_status = ui.select(
-                    [{"value": "all", "label": t("publish.all")}] +
-                    [{"value": s, "label": t(f"status.{s}")} for s in ["draft", "approved", "scheduled", "published", "failed"]],
+                    status_options,
                     value="all",
                     label=t("publish.filter_status")
                 ).style("min-width: 150px;").props("outlined dark")
