@@ -209,6 +209,9 @@ class Database:
         params.append(limit)
         return await self.fetch_all(sql, tuple(params))
 
+    async def delete_post(self, post_id: int) -> None:
+        await self.execute("DELETE FROM posts WHERE id = ?", (post_id,))
+
     # --- Schedule operations ---
 
     async def create_schedule(self, **kwargs: object) -> int:

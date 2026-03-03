@@ -576,5 +576,18 @@ def run() -> None:
         console.print("\n[yellow]Daemon stopped.[/yellow]")
 
 
+# --- GUI ---
+
+
+@cli.command()
+@click.option("--host", default="127.0.0.1", help="Host to bind to")
+@click.option("--port", default=8080, type=int, help="Port to bind to")
+def gui(host: str, port: int) -> None:
+    """Launch the web-based GUI."""
+    from content_pilot.gui import launch_gui
+
+    launch_gui(host=host, port=port)
+
+
 if __name__ == "__main__":
     cli()
