@@ -87,7 +87,7 @@ def launch_gui(host: str = "127.0.0.1", port: int = 8080) -> None:
     app.on_shutdown(_shutdown)
 
     # Add global CSS
-    ui.add_head_html(_GLOBAL_CSS)
+    ui.add_head_html(_GLOBAL_CSS, shared=True)
 
     # Register page routes
     dashboard.register()
