@@ -52,7 +52,9 @@ def register() -> None:
                 scheduled_tasks = sum(1 for s in schedules if s.get("enabled", 0))
 
                 # --- Statistics Summary Row ---
-                with ui.row().classes("q-gutter-md flex-wrap"):
+                with ui.row().classes("full-width q-gutter-md").style(
+                    "display: grid; grid-template-columns: repeat(4, 1fr);"
+                ):
                     stat_card(
                         t("dashboard.total_accounts"),
                         total_accounts,
@@ -79,13 +81,15 @@ def register() -> None:
                     )
 
                 # --- Account Overview + Quick Actions Row ---
-                with ui.row().classes("q-gutter-lg q-mt-lg").style(
-                    "align-items: stretch;"
+                with ui.row().classes("full-width q-gutter-lg q-mt-lg").style(
+                    "display: grid; grid-template-columns: 2fr 1fr; align-items: start;"
                 ):
                     # Account Overview
-                    with ui.column().classes("full-width").style("flex: 1; min-width: 0;"):
+                    with ui.card().classes("q-pa-md full-width").style(
+                        f"background: {COLORS['surface']}; border-radius: 12px; min-height: 180px;"
+                    ):
                         ui.label(t("dashboard.account_overview")).classes(
-                            "text-h6 q-mb-sm"
+                            "text-h6 q-mb-md"
                         ).style(f"color: {COLORS['text_primary']};")
                         if not accounts:
                             ui.label(
@@ -97,14 +101,13 @@ def register() -> None:
                                     account_card(acc)
 
                     # Quick Actions Panel
-                    with ui.card().classes("q-pa-md").style(
-                        f"background: {COLORS['surface']}; "
-                        "min-width: 250px; border-radius: 12px;"
+                    with ui.card().classes("q-pa-md full-width").style(
+                        f"background: {COLORS['surface']}; border-radius: 12px; min-height: 180px;"
                     ):
                         ui.label(t("dashboard.quick_actions")).classes(
                             "text-h6 q-mb-md"
                         ).style(f"color: {COLORS['text_primary']};")
-                        with ui.column().classes("q-gutter-sm"):
+                        with ui.column().classes("q-gutter-sm full-width"):
                             ui.button(
                                 t("dashboard.generate_content"),
                                 icon="edit_note",
@@ -127,7 +130,7 @@ def register() -> None:
                             )
 
                 # --- Activity Chart (Last 7 Days) ---
-                with ui.card().classes("q-pa-md q-mt-lg").style(
+                with ui.card().classes("q-pa-md q-mt-lg full-width").style(
                     f"background: {COLORS['surface']}; "
                     "border-radius: 12px;"
                 ):
@@ -156,28 +159,30 @@ def register() -> None:
 
                     max_count = max(counts) if counts else 1
 
-                    with ui.row().classes("q-gutter-sm items-end justify-center"):
+                    with ui.row().classes("full-width q-gutter-md items-end justify-center").style(
+                        "padding: 0 16px;"
+                    ):
                         for date, count in zip(dates, counts):
                             height_percent = (count / max_count) * 100 if max_count > 0 else 0
-                            with ui.column().classes("items-center q-gutter-xs"):
-                                ui.label(str(count)).classes("text-caption").style(
+                            with ui.column().classes("items-center").style("flex: 1;"):
+                                ui.label(str(count)).classes("text-caption q-mb-xs").style(
                                     f"color: {COLORS['text_secondary']};"
                                 )
                                 with ui.card().classes("q-pa-none").style(
                                     f"background: {COLORS['primary']}; "
-                                    f"width: 30px; "
+                                    f"width: 100%; max-width: 40px; "
                                     f"height: {max(height_percent, 8)}px; "
                                     "border-radius: 4px 4px 0 0; "
                                     "transition: height 0.3s;"
                                 ):
                                     pass
-                                ui.label(date).classes("text-caption").style(
+                                ui.label(date).classes("text-caption q-mt-xs").style(
                                     f"color: {COLORS['text_secondary']};"
                                 )
 
                 # --- Recent Posts Table ---
                 ui.label(t("dashboard.recent_posts")).classes(
-                    "text-h6 q-mt-lg q-mb-sm"
+                    "text-h6 q-mt-lg q-mb-md"
                 ).style(f"color: {COLORS['text_primary']};")
                 if not posts:
                     ui.label(

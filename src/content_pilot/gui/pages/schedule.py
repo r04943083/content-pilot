@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from calendar import monthcalendar, month_name
 from typing import TYPE_CHECKING
 
@@ -16,9 +16,41 @@ from content_pilot.gui.i18n import t
 from content_pilot.gui.main import get_pilot
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Coroutine
+    from typing import Any
 
 logger = logging.getLogger(__name__)
+
+
+def _describe_cron(cron_expr: str) -> str:
+    """Provide a human-readable description of the cron expression.
+
+    Args:
+        cron_expr: Cron expression string
+
+    Returns:
+        Human-readable description
+    """
+    parts = cron_expr.strip().split()
+    if len(parts) != 5:
+        return t("schedule.invalid_cron")
+
+    # Common patterns
+    if cron_expr == "0 9 * * *":
+        return f"{t('schedule.runs_daily')} 09:00"
+    elif cron_expr == "0 20 * * *":
+        return f"{t('schedule.runs_daily')} 20:00"
+    elif cron_expr == "0 * * * *":
+        return t("schedule.runs_hourly")
+    elif cron_expr == "0 */4 * * *":
+        return f"{t('schedule.runs_every')} 4h"
+    elif cron_expr == "0 9 * * 1":
+        return f"{t('schedule.runs_weekly')} ({t('schedule.mon')}) 09:00"
+    elif cron_expr == "0 9 * * 5":
+        return f"{t('schedule.runs_weekly')} ({t('schedule.fri')}) 09:00"
+
+    # Generic description
+    return f"{t('schedule.cron_format')}: {cron_expr}"
 
 
 def _format_next_run(cron_expression: str) -> str:
@@ -93,6 +125,81 @@ def _get_schedules_for_day(schedules: list[dict], year: int, month: int, day: in
         return []
 
 
+def _pause_btn(schedule_id: int, refresh: Callable[[], Coroutine[Any, Any, None]]) -> None:
+    """Create a pause button for a schedule.
+
+    Args:
+        schedule_id: ID of the schedule to pause
+        refresh: Callback to refresh the UI
+    """
+    async def do_pause():
+        pilot = get_pilot()
+        await pilot.scheduler.pause_schedule(schedule_id)
+        ui.notify(t("schedule.paused"), type="info")
+        await refresh()
+
+    ui.button(
+        t("schedule.pause"),
+        icon="pause",
+        on_click=do_pause
+    ).props("dense outline").style(f"color: {COLORS['warning']};")
+
+
+def _resume_btn(schedule_id: int, refresh: Callable[[], Coroutine[Any, Any, None]]) -> None:
+    """Create a resume button for a schedule.
+
+    Args:
+        schedule_id: ID of the schedule to resume
+        refresh: Callback to refresh the UI
+    """
+    async def do_resume():
+        pilot = get_pilot()
+        await pilot.scheduler.resume_schedule(schedule_id)
+        ui.notify(t("schedule.resumed"), type="positive")
+        await refresh()
+
+    ui.button(
+        t("schedule.resume"),
+        icon="play_arrow",
+        on_click=do_resume
+    ).props("dense outline").style(f"color: {COLORS['accent']};")
+
+
+def _delete_btn(schedule_id: int, refresh: Callable[[], Coroutine[Any, Any, None]]) -> None:
+    """Create a delete button for a schedule.
+
+    Args:
+        schedule_id: ID of the schedule to delete
+        refresh: Callback to refresh the UI
+    """
+    async def do_delete():
+        async def confirm_delete():
+            pilot = get_pilot()
+            await pilot.scheduler.remove_schedule(schedule_id)
+            ui.notify(t("schedule.deleted"), type="info")
+            dialog.close()
+            await refresh()
+
+        with ui.dialog() as dialog, ui.card():
+            ui.label(t("common.confirm_delete"))
+            with ui.row().classes("q-gutter-sm q-mt-sm"):
+                ui.button(
+                    f"{t('common.yes')}, {t('common.delete').lower()}",
+                    on_click=confirm_delete
+                ).props(f"color={COLORS['warning']}")
+                ui.button(
+                    t("common.cancel"),
+                    on_click=dialog.close
+                ).props("outline")
+        dialog.open()
+
+    ui.button(
+        t("common.delete"),
+        icon="delete",
+        on_click=do_delete
+    ).props("dense outline").style("color: #EF4444;")
+
+
 def register() -> None:
     @ui.page("/schedule")
     async def schedule_page():
@@ -101,9 +208,9 @@ def register() -> None:
 
         pilot = get_pilot()
 
-        # State variables
-        view_state = {"current": "list"}  # "list" or "calendar"
+        # State variables - use mutable containers for closure access
         calendar_state = {"year": datetime.now().year, "month": datetime.now().month}
+        cached_schedules = {"data": []}
 
         with ui.column().classes(
             "full-width q-pa-md"
@@ -119,17 +226,6 @@ def register() -> None:
                     value="list",
                 ).props("dark dense")
 
-                def on_view_change(e):
-                    view_state["current"] = e.value
-                    if e.value == "calendar":
-                        calendar_container.classes("visible")
-                        list_container.classes("hidden")
-                    else:
-                        calendar_container.classes("hidden")
-                        list_container.classes("visible")
-
-                view_toggle.on_value_change(on_view_change)
-
             # Calendar view (hidden by default)
             with ui.card().classes("full-width q-pa-lg hidden").style(
                 f"background: {COLORS['surface']}; border-radius: 12px;"
@@ -140,21 +236,25 @@ def register() -> None:
 
                 # Month navigation
                 with ui.row().classes("full-width items-center justify-between q-mb-md"):
-                    ui.button(icon="chevron_left", on_click=lambda: _change_month(-1)).props(
-                        "dense flat"
-                    ).style(f"color: {COLORS['primary']};")
+                    ui.button(
+                        icon="chevron_left",
+                        on_click=lambda: change_month(-1)
+                    ).props("dense flat").style(f"color: {COLORS['primary']};")
                     month_label = ui.label("").classes("text-h6 text-weight-bold").style(
                         f"color: {COLORS['text_primary']};"
                     )
-                    ui.button(icon="chevron_right", on_click=lambda: _change_month(1)).props(
-                        "dense flat"
-                    ).style(f"color: {COLORS['primary']};")
+                    ui.button(
+                        icon="chevron_right",
+                        on_click=lambda: change_month(1)
+                    ).props("dense flat").style(f"color: {COLORS['primary']};")
 
                 # Day headers
                 with ui.row().classes("full-width q-gutter-xs q-mb-sm"):
-                    day_names = [t("schedule.mon"), t("schedule.tue"), t("schedule.wed"),
-                                t("schedule.thu"), t("schedule.fri"), t("schedule.sat"),
-                                t("schedule.sun")]
+                    day_names = [
+                        t("schedule.mon"), t("schedule.tue"), t("schedule.wed"),
+                        t("schedule.thu"), t("schedule.fri"), t("schedule.sat"),
+                        t("schedule.sun")
+                    ]
                     for day in day_names:
                         ui.label(day).classes(
                             "flex-1 text-center text-caption text-weight-bold"
@@ -224,25 +324,22 @@ def register() -> None:
                                 value="0 20 * * *",
                             ).classes("full-width").props("outlined dark")
 
-                            cron_input.bind_value_from(cron_preset, "value")
-
-                            def _update_cron(e):
-                                if e.value != "custom":
-                                    cron_input.value = e.value
-
-                            cron_preset.on_value_change(_update_cron)
-
                             # Cron description helper
                             cron_description = ui.label("").classes("text-caption q-mt-xs").style(
                                 f"color: {COLORS['text_secondary']};"
                             )
 
-                            def _update_description():
-                                desc = _describe_cron(cron_input.value)
-                                cron_description.text = desc
+                            def update_cron_description():
+                                cron_description.text = _describe_cron(cron_input.value)
 
-                            cron_input.on_value_change(_update_description)
-                            _update_description()
+                            cron_input.on_value_change(lambda e: update_cron_description())
+                            update_cron_description()
+
+                            def on_cron_preset_change(e):
+                                if e.value != "custom":
+                                    cron_input.value = e.value
+
+                            cron_preset.on_value_change(on_cron_preset_change)
 
                 async def do_add():
                     name = name_input.value.strip()
@@ -286,9 +383,96 @@ def register() -> None:
                     on_click=do_add
                 ).props(f"color={COLORS['primary']}").classes("q-mt-md")
 
+            def on_view_change(e):
+                if e.value == "calendar":
+                    calendar_container.classes(remove="hidden")
+                    list_container.classes(add="hidden")
+                else:
+                    calendar_container.classes(add="hidden")
+                    list_container.classes(remove="hidden")
+
+            view_toggle.on_value_change(on_view_change)
+
+            def update_calendar_grid():
+                """Update the calendar grid with schedules."""
+                schedules = cached_schedules["data"]
+                calendar_grid.clear()
+                with calendar_grid:
+                    cal = monthcalendar(calendar_state["year"], calendar_state["month"])
+                    month_name_str = month_name[calendar_state["month"]]
+                    month_label.text = f"{month_name_str} {calendar_state['year']}"
+
+                    today = datetime.now()
+                    is_current_month = (
+                        calendar_state["year"] == today.year
+                        and calendar_state["month"] == today.month
+                    )
+
+                    for week_idx, week in enumerate(cal):
+                        with ui.row().classes("full-width q-gutter-xs q-mt-xs"):
+                            for day in week:
+                                with ui.card().classes(
+                                    "flex-1 q-pa-xs cursor-pointer"
+                                ).style(
+                                    f"background: {COLORS['background'] if day != 0 else 'transparent'}; "
+                                    f"border: 1px solid {COLORS['primary'] if is_current_month and day == today.day else 'rgba(255,255,255,0.1)'}; "
+                                    "min-height: 70px; border-radius: 8px; transition: all 0.2s;"
+                                ):
+                                    if day != 0:
+                                        # Day number
+                                        is_today = is_current_month and day == today.day
+                                        ui.label(str(day)).classes(
+                                            "text-caption text-weight-bold"
+                                        ).style(
+                                            f"color: {COLORS['primary'] if is_today else COLORS['text_primary']};"
+                                        )
+
+                                        # Get schedules for this day
+                                        day_schedules = _get_schedules_for_day(
+                                            schedules,
+                                            calendar_state["year"],
+                                            calendar_state["month"],
+                                            day
+                                        )
+
+                                        # Show schedule indicators
+                                        if day_schedules:
+                                            with ui.column().classes("q-mt-xs"):
+                                                for sched in day_schedules[:3]:  # Max 3 shown
+                                                    # Platform icon
+                                                    platform = sched.get("platform", "unknown")
+                                                    icon_name = PLATFORMS.get(platform, "schedule")
+                                                    ui.icon(icon_name, size="xs").classes(
+                                                        "text-primary"
+                                                    ).style(f"color: {COLORS['primary_light']};")
+
+                                                if len(day_schedules) > 3:
+                                                    ui.label(f"+{len(day_schedules) - 3}").classes(
+                                                        "text-caption text-center"
+                                                    ).style(f"color: {COLORS['text_secondary']};")
+
+            def change_month(delta: int):
+                """Navigate between months.
+
+                Args:
+                    delta: Number of months to move (-1 or 1)
+                """
+                new_month = calendar_state["month"] + delta
+                if new_month > 12:
+                    calendar_state["month"] = 1
+                    calendar_state["year"] += 1
+                elif new_month < 1:
+                    calendar_state["month"] = 12
+                    calendar_state["year"] -= 1
+                else:
+                    calendar_state["month"] = new_month
+                # Update calendar without page reload
+                update_calendar_grid()
+
             async def refresh_schedules():
                 """Refresh the schedules list and calendar."""
                 schedules = await pilot.db.get_schedules()
+                cached_schedules["data"] = schedules
 
                 # Update list view
                 schedules_container.clear()
@@ -343,226 +527,7 @@ def register() -> None:
                                     _delete_btn(s["id"], refresh_schedules)
 
                 # Update calendar view
-                _update_calendar(schedules)
-
-            def _update_calendar(schedules: list[dict]):
-                """Update the calendar grid with schedules."""
-                calendar_grid.clear()
-                with calendar_grid:
-                    cal = monthcalendar(calendar_state["year"], calendar_state["month"])
-                    month_name_str = month_name[calendar_state["month"]]
-                    month_label.text = f"{month_name_str} {calendar_state['year']}"
-
-                    today = datetime.now()
-                    is_current_month = (
-                        calendar_state["year"] == today.year
-                        and calendar_state["month"] == today.month
-                    )
-
-                    for week_idx, week in enumerate(cal):
-                        with ui.row().classes("full-width q-gutter-xs q-mt-xs"):
-                            for day in week:
-                                with ui.card().classes(
-                                    "flex-1 q-pa-xs cursor-pointer"
-                                ).style(
-                                    f"background: {COLORS['background'] if day != 0 else 'transparent'}; "
-                                    f"border: 1px solid {COLORS['primary'] if is_current_month and day == today.day else 'rgba(255,255,255,0.1)'}; "
-                                    "min-height: 70px; border-radius: 8px; transition: all 0.2s;"
-                                ):
-                                    if day != 0:
-                                        # Day number
-                                        is_today = is_current_month and day == today.day
-                                        ui.label(str(day)).classes(
-                                            f"text-caption text-weight-bold"
-                                        ).style(
-                                            f"color: {COLORS['primary']} if is_today else {COLORS['text_primary']};"
-                                        )
-
-                                        # Get schedules for this day
-                                        day_schedules = _get_schedules_for_day(
-                                            schedules,
-                                            calendar_state["year"],
-                                            calendar_state["month"],
-                                            day
-                                        )
-
-                                        # Show schedule indicators
-                                        if day_schedules:
-                                            with ui.column().classes("q-mt-xs"):
-                                                for sched in day_schedules[:3]:  # Max 3 shown
-                                                    # Platform icon
-                                                    platform = sched.get("platform", "unknown")
-                                                    icon_name = PLATFORMS.get(platform, "schedule")
-                                                    ui.icon(icon_name, size="xs").classes(
-                                                        "text-primary"
-                                                    ).style(f"color: {COLORS['primary_light']};")
-
-                                                if len(day_schedules) > 3:
-                                                    ui.label(f"+{len(day_schedules) - 3}").classes(
-                                                        "text-caption text-center"
-                                                    ).style(f"color: {COLORS['text_secondary']};")
-
-                                        # Click to show details
-                                        if day_schedules:
-                                            ui.card().classes("hidden").props("flat")
-                                            async def show_details(d=day, ds=day_schedules):
-                                                with ui.dialog() as dialog, ui.card():
-                                                    ui.label(f"{t('schedule.schedules')} - {month_name_str} {d}").classes(
-                                                        "text-h6 q-mb-md"
-                                                    )
-                                                    with ui.column().classes("q-gutter-sm"):
-                                                        for sched in ds:
-                                                            with ui.card().classes("q-pa-sm"):
-                                                                with ui.row().classes("items-center q-gutter-sm"):
-                                                                    ui.icon(
-                                                                        PLATFORMS.get(sched.get("platform"), "schedule")
-                                                                    ).classes("text-primary")
-                                                                    ui.label(sched["name"]).classes("text-subtitle2")
-                                                                ui.label(f"{t('schedule.cron')}: {sched['cron_expression']}").classes(
-                                                                    "text-caption"
-                                                                )
-                                                                if sched.get("topic"):
-                                                                    ui.label(f"{t('schedule.topic')}: {sched['topic']}").classes(
-                                                                        "text-caption"
-                                                                    )
-                                                    with ui.row().classes("q-gutter-sm q-mt-md"):
-                                                        ui.button(
-                                                            t("common.close"),
-                                                            on_click=dialog.close
-                                                        ).props("outline")
-                                                dialog.open()
-
-                                            # Make the card clickable
-                                            current_card = ui.parent_card
-                                            current_card.on("click", show_details)
-                                            current_card.classes(
-                                                "hover:opacity-80"
-                                            ).style("cursor: pointer;")
-
-            def _change_month(delta: int):
-                """Navigate between months.
-
-                Args:
-                    delta: Number of months to move (-1 or 1)
-                """
-                new_month = calendar_state["month"] + delta
-                if new_month > 12:
-                    calendar_state["month"] = 1
-                    calendar_state["year"] += 1
-                elif new_month < 1:
-                    calendar_state["month"] = 12
-                    calendar_state["year"] -= 1
-                else:
-                    calendar_state["month"] = new_month
-                # Refresh calendar (schedules are fetched separately)
-                ui.run_javascript("window.location.reload()")
-
-            def _describe_cron(cron_expr: str) -> str:
-                """Provide a human-readable description of the cron expression.
-
-                Args:
-                    cron_expr: Cron expression
-
-                Returns:
-                    Human-readable description
-                """
-                parts = cron_expr.strip().split()
-                if len(parts) != 5:
-                    return t("schedule.invalid_cron")
-
-                minute, hour, day, month, weekday = parts
-
-                # Common patterns
-                if cron_expr == "0 9 * * *":
-                    return f"{t('schedule.runs_daily')} 09:00"
-                elif cron_expr == "0 20 * * *":
-                    return f"{t('schedule.runs_daily')} 20:00"
-                elif cron_expr == "0 * * * *":
-                    return t("schedule.runs_hourly")
-                elif cron_expr == "0 */4 * * *":
-                    return f"{t('schedule.runs_every')} 4h"
-                elif cron_expr == "0 9 * * 1":
-                    return f"{t('schedule.runs_weekly')} ({t('schedule.mon')}) 09:00"
-                elif cron_expr == "0 9 * * 5":
-                    return f"{t('schedule.runs_weekly')} ({t('schedule.fri')}) 09:00"
-
-                # Generic description
-                return f"{t('schedule.cron_format')}: {cron_expr}"
+                update_calendar_grid()
 
             # Initial load
             await refresh_schedules()
-
-
-def _pause_btn(schedule_id: int, refresh: Callable[[], None]) -> None:
-    """Create a pause button for a schedule.
-
-    Args:
-        schedule_id: ID of the schedule to pause
-        refresh: Callback to refresh the UI
-    """
-    async def do_pause():
-        pilot = get_pilot()
-        await pilot.scheduler.pause_schedule(schedule_id)
-        ui.notify(t("schedule.paused"), type="info")
-        await refresh()
-
-    ui.button(
-        t("schedule.pause"),
-        icon="pause",
-        on_click=do_pause
-    ).props("dense outline").style(f"color: {COLORS['warning']};")
-
-
-def _resume_btn(schedule_id: int, refresh: Callable[[], None]) -> None:
-    """Create a resume button for a schedule.
-
-    Args:
-        schedule_id: ID of the schedule to resume
-        refresh: Callback to refresh the UI
-    """
-    async def do_resume():
-        pilot = get_pilot()
-        await pilot.scheduler.resume_schedule(schedule_id)
-        ui.notify(t("schedule.resumed"), type="positive")
-        await refresh()
-
-    ui.button(
-        t("schedule.resume"),
-        icon="play_arrow",
-        on_click=do_resume
-    ).props("dense outline").style(f"color: {COLORS['accent']};")
-
-
-def _delete_btn(schedule_id: int, refresh: Callable[[], None]) -> None:
-    """Create a delete button for a schedule.
-
-    Args:
-        schedule_id: ID of the schedule to delete
-        refresh: Callback to refresh the UI
-    """
-    async def do_delete():
-        async def confirm_delete():
-            pilot = get_pilot()
-            await pilot.scheduler.remove_schedule(schedule_id)
-            ui.notify(t("schedule.deleted"), type="info")
-            dialog.close()
-            await refresh()
-
-        with ui.dialog() as dialog, ui.card():
-            ui.label(t("common.confirm_delete"))
-            with ui.row().classes("q-gutter-sm q-mt-sm"):
-                ui.button(
-                    f"{t('common.yes')}, {t('common.delete').lower()}",
-                    on_click=confirm_delete
-                ).props(f"color={COLORS['warning']}")
-                ui.button(
-                    t("common.cancel"),
-                    on_click=dialog.close
-                ).props("outline")
-        dialog.open()
-
-    ui.button(
-        t("common.delete"),
-        icon="delete",
-        on_click=do_delete
-    ).props("dense outline").style("color: #EF4444;")

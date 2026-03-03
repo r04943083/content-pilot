@@ -72,7 +72,7 @@ def on_language_change(lang: str) -> None:
         code = lang_map.get(lang, "zh_CN")
         set_language(code)
         # Refresh the page to apply translations
-        ui.navigate.to(ui.context.client.location.pathname)
+        ui.navigate.to(get_current_path())
         logger.info(f"Language changed to: {code}")
     except Exception as e:
         logger.warning(f"Could not change language: {e}")
